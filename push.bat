@@ -11,14 +11,13 @@ echo === 正在準備上傳 MochiRP 地圖 ===
 :: 1. 加入所有變更
 git add .
 
-:: 2. 設定提交訊息 (包含當前時間)
+:: 2. 設定提交訊息
 set msg=Update Map: %date% %time%
 git commit -m "%msg%"
 
-:: 3. 推送到 GitHub
+:: 3. 推送到 GitHub (這裡把 main 改成 master)
 echo 正在推送至 GitHub...
-git push origin main
+git push origin master
 
 echo === 更新完成！ ===
-echo 網頁通常會在 1-2 分鐘內同步完成。
 pause
