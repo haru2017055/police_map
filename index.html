@@ -4,6 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>MOCHIRP LSPD MDT</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <style>
     :root {
       --bg: #050b14;
@@ -176,7 +178,9 @@
     .package-edit-card button { height: 39px; }
     .report-output { white-space: pre-wrap; min-height: 190px; border: 1px solid var(--line); background: linear-gradient(180deg, #06111f, #04101d); border-radius: 8px; padding: 16px; color: #bfe7ff; line-height: 1.6; box-shadow: inset 0 0 28px rgba(0,0,0,.26); }
     .map-shell { height: calc(100vh - 220px); min-height: 560px; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: #071526; }
-    .map-shell iframe { width: 100%; height: 100%; border: 0; display: block; }
+    #embeddedMap { width: 100%; height: 100%; background: #071526; }
+    .leaflet-control-attribution { display: none !important; }
+    .leaflet-container { background: #071526; font-family: inherit; }
     .toast {
       position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%) translateY(18px);
       opacity: 0; pointer-events: none; background: #06243a; border: 1px solid var(--cyan);
@@ -343,9 +347,9 @@
         <div class="panel-title">
           <span>警用地圖</span>
         </div>
-        <div class="panel-body">
-          <div class="map-shell">
-            <iframe id="mapFrame" title="police map"></iframe>
+          <div class="panel-body">
+            <div class="map-shell">
+            <div id="embeddedMap"></div>
           </div>
         </div>
       </div>
@@ -1436,13 +1440,11 @@
     const COMMON_LAW_CODES = ['1-008', '1-009', '2-004', '2-026', '2-012', '3-006', '3-007', '3-008', '3-009', '3-011', '3-012', '3-016', '3-017', '5-001', '5-004', '5-005', '5-007'];
     const DEFAULT_LAW_PACKAGES = [
       { name: '搶劫超商', desc: '常見商店搶劫後載具逃逸、人質情境。', codes: ['1-008', '5-005', '2-004'] },
-      { name: '搶劫市民', desc: '路邊搶劫、徒步或載具逃逸情境。', codes: ['1-009', '5-004', '2-026'] },
-      { name: '搶劫珠寶', desc: '珠寶店案件搭配人質與載具逃逸。', codes: ['1-008', '5-007', '2-004'] },
-      { name: 'ATM / 金融設施', desc: '破壞金融設施並逃避警方。', codes: ['1-008', '5-001', '2-026'] },
-      { name: '販賣毒品', desc: '毒品販售、持有毒品與拒捕。', codes: ['1-009', '3-009', '3-011'] },
-      { name: '大量毒品', desc: '大量毒品持有、販售與運送。', codes: ['3-009', '3-012', '5-014'] },
+      { name: '搶劫市民', desc: '路邊搶劫並利用交通工具逃避警方。', codes: ['5-004', '1-008'] },
+      { name: '搶劫珠寶', desc: '珠寶店案件搭配人質與載具逃逸。', codes: ['5-007', '2-004', '1-008'] },
+      { name: 'ATM / 金融設施', desc: '破壞金融設施並逃避警方。', codes: ['5-001', '1-008'] },
+      { name: '販賣毒品', desc: '毒品販售、載具拒捕與黑錢或非法物品。', codes: ['3-009', '1-008', '3-008'] },
       { name: '黑錢交易', desc: '持有黑錢、非法物品與贓物。', codes: ['3-006', '3-008', '3-007'] },
-      { name: '非法槍械', desc: '持槍、使用槍械與未誠實告知。', codes: ['3-001', '3-016', '3-017'] }
     ];
     let lawPackages = loadLawPackages();
     let commonCollapsed = true;
@@ -1744,12 +1746,42 @@
       renderPackages();
       renderPackageEditor();
     }
+    let embeddedMap = null;
+    function initEmbeddedMap() {
+      if (embeddedMap || typeof L === 'undefined') return;
+      const mapEl = document.getElementById('embeddedMap');
+      if (!mapEl) return;
+      embeddedMap = L.map(mapEl, {
+        crs: L.CRS.Simple,
+        zoomControl: true,
+        minZoom: -4,
+        maxZoom: 3,
+        zoomSnap: 0.1
+      });
+      const imageUrl = 'https://r2.fivemanage.com/XbTfimN1V2ewbHyVypsMo/FiveMMapLayered_1.png';
+      const img = new Image();
+      img.onload = () => {
+        const bounds = [[0, 0], [img.height, img.width]];
+        L.imageOverlay(imageUrl, bounds).addTo(embeddedMap);
+        embeddedMap.setMaxBounds(bounds);
+        embeddedMap.setView([img.height * 0.25, img.width * 0.5], -2.3);
+        setTimeout(() => embeddedMap.invalidateSize(), 100);
+      };
+      img.onerror = () => {
+        mapEl.innerHTML = '<div style="padding:18px;color:#6fa0c4">地圖底圖載入失敗，請確認網路或圖片連結是否可用。</div>';
+      };
+      img.src = imageUrl;
+    }
     document.querySelectorAll('.tab').forEach(tab => {
       tab.addEventListener('click', () => {
         document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
         document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
         tab.classList.add('active');
         document.getElementById(tab.dataset.tab).classList.add('active');
+        if (tab.dataset.tab === 'map') {
+          initEmbeddedMap();
+          setTimeout(() => embeddedMap?.invalidateSize(), 100);
+        }
       });
     });
     document.getElementById('crimeSearch').addEventListener('input', renderPicker);
@@ -1786,7 +1818,6 @@
       selected = [];
       renderAll();
     });
-    document.getElementById('mapFrame').src = ['file:///C:/Users/haru2/Down', 'loads/police_', 'map/index.html'].join('');
     renderAll();
   </script>
 </body>
