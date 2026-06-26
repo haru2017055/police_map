@@ -1,1054 +1,1793 @@
 <!DOCTYPE html>
-<html lang="zh-TW"> 
+<html lang="zh-TW">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>麻糬警用學習地圖</title>
-
-    <!-- Tailwind CSS 用於快速且現代的 UI 設計 -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- FontAwesome 用於高質感的圖示 -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <!-- Leaflet.js 地圖庫與其 CSS -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
-    <script>
-        // 設定 Tailwind 的自訂主題顏色
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        navy: {
-                            800: '#1a2a40',
-                            900: '#0a192f',
-                        },
-                        accent: '#3b82f6', // 亮藍色作為強調色
-                        sidebarBg: '#111827' // 新增側邊欄指定底色
-                    }
-                }
-            }
-        }
-    </script>
-
-    <style>
-        /* 隱藏地圖預設的版權宣告以保持介面潔淨 (RP伺服器常見做法) */
-        .leaflet-control-attribution { display: none !important; }
-        
-        /* 地圖標籤文字預設隱藏，透過外層 class 控制顯示 */
-        .leaflet-tooltip {
-            background-color: rgba(10, 25, 47, 0.9);
-            color: white;
-            border: 1px solid #3b82f6;
-            border-radius: 6px;
-            font-weight: bold;
-            padding: 4px 8px;
-            display: none; /* 預設隱藏 */
-            box-shadow: 0 4px 6px rgba(0,0,0,0.5);
-            transition: opacity 0.2s;
-        }
-        
-        /* 當 app 容器擁有 show-labels 類別時，顯示標籤 */
-        #app.show-labels .leaflet-tooltip {
-            display: block;
-        }
-
-        /* Hover 時強制顯示標籤的類別 */
-        .leaflet-tooltip.force-show {
-            display: block !important;
-        }
-
-        /* 隱藏原生滾動條，使用更平滑的視覺效果 */
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: #111827; }
-        ::-webkit-scrollbar-thumb { background: #3b82f6; border-radius: 3px; }
-
-        /* 右側工具列按鈕的通用樣式 (深色底、方形圓角、純白圖標) */
-        .toolbar-btn {
-            width: 50px;
-            height: 50px;
-            border-radius: 14px; /* 方形圓角 */
-            background-color: #111827; /* 極深色底 */
-            color: #ffffff; /* 純白色圖標 */
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 22px;
-            transition: all 0.2s ease;
-            border: 1px solid rgba(255, 255, 255, 0.15); /* 微弱的白色邊框增加質感 */
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.6);
-            cursor: pointer;
-        }
-        
-        /* 按鈕懸停特效 */
-        .toolbar-btn:hover {
-            background-color: #3b82f6; /* 亮藍色 */
-            border-color: #60a5fa;
-            transform: translateY(-2px);
-            box-shadow: 0 6px 15px rgba(59, 130, 246, 0.6);
-            color: #ffffff;
-        }
-
-        /* 右鍵自訂選單樣式 */
-        .context-menu {
-            position: absolute;
-            background-color: #111827;
-            border: 1px solid #3b82f6;
-            border-radius: 8px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.8);
-            z-index: 2000;
-            overflow: hidden;
-            display: none;
-        }
-        .context-menu-item {
-            padding: 10px 16px;
-            color: white;
-            cursor: pointer;
-            font-size: 14px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            transition: background 0.2s;
-        }
-        .context-menu-item:hover {
-            background-color: #3b82f6;
-        }
-
-        /* =========================================
-           客製化 Leaflet 彈出視窗 (Popup) 樣式 
-           ========================================= */
-        .custom-popup .leaflet-popup-content-wrapper {
-            background-color: #111827; /* 對話框深色底與側邊欄同步 */
-            color: white;
-            padding: 0; /* 移除預設內距，讓圖片與標題填滿邊緣 */
-            border-radius: 12px;
-            overflow: hidden;
-            border: 1px solid #3b82f6;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.8);
-        }
-        .custom-popup .leaflet-popup-content {
-            margin: 0; /* 移除外距 */
-            width: 340px !important; /* 固定對話框寬度，讓圖片夠大 */
-            line-height: 1.5;
-        }
-        .custom-popup .leaflet-popup-tip {
-            background-color: #111827; /* 底部箭頭顏色同步 */
-            border: 1px solid #3b82f6;
-        }
-        /* 關閉按鈕樣式調整，確保在深色背景上清晰可見 */
-        .custom-popup .leaflet-popup-close-button {
-            color: white !important;
-            text-shadow: 0 1px 3px rgba(0,0,0,0.8);
-            z-index: 10;
-            padding: 8px 12px 0 0 !important;
-        }
-        .custom-popup .leaflet-popup-close-button:hover {
-            color: #3b82f6 !important; /* 懸停變紅 */
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MOCHIRP LSPD MDT</title>
+  <style>
+    :root {
+      --bg: #050b14;
+      --panel: #07182b;
+      --panel2: #0a2038;
+      --line: #0c4b76;
+      --line2: #12618e;
+      --text: #d7ecff;
+      --muted: #6e98bb;
+      --cyan: #00d9ff;
+      --green: #00f0a8;
+      --red: #ff4168;
+      --yellow: #ffd84d;
+      --violet: #9d7cff;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--text);
+      font-family: "Segoe UI", "Microsoft JhengHei", Arial, sans-serif;
+      background:
+        linear-gradient(rgba(0, 217, 255, .025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 217, 255, .025) 1px, transparent 1px),
+        radial-gradient(circle at 70% 0%, rgba(0, 217, 255, .1), transparent 34%),
+        var(--bg);
+      background-size: 32px 32px, 32px 32px, auto, auto;
+    }
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background: linear-gradient(rgba(255,255,255,.018) 50%, transparent 50%);
+      background-size: 100% 4px;
+      mix-blend-mode: screen;
+      opacity: .46;
+      z-index: 40;
+    }
+    button, input, select, textarea { font: inherit; }
+    button {
+      border: 1px solid var(--line);
+      background: linear-gradient(180deg, #0a2037, #061422);
+      color: var(--text);
+      border-radius: 7px;
+      padding: 9px 12px;
+      cursor: pointer;
+      transition: .15s ease;
+    }
+    button:hover { border-color: var(--cyan); color: white; box-shadow: 0 0 14px rgba(0, 217, 255, .16); }
+    button.primary { background: linear-gradient(180deg, #00a9ff, #006aaa); border-color: #56d8ff; color: white; box-shadow: inset 0 1px rgba(255,255,255,.24); }
+    button.good { border-color: #00aa7a; color: var(--green); background: linear-gradient(180deg, #063626, #061b18); }
+    button.danger { border-color: #8a1831; color: var(--red); background: linear-gradient(180deg, #32101c, #170912); }
+    button:disabled { opacity: .45; cursor: not-allowed; box-shadow: none; }
+    input, select, textarea {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      background: rgba(3, 12, 22, .92);
+      color: var(--text);
+      padding: 10px 12px;
+      outline: none;
+    }
+    input:focus, select:focus, textarea:focus { border-color: var(--cyan); box-shadow: 0 0 0 2px rgba(0, 217, 255, .12); }
+    textarea { min-height: 92px; resize: vertical; }
+    .wrap { width: min(1540px, calc(100% - 36px)); margin: 0 auto; }
+    header { padding: 18px 0 16px; border-bottom: 1px solid rgba(0, 217, 255, .12); background: linear-gradient(180deg, rgba(2, 11, 22, .9), rgba(2, 11, 22, .45)); position: sticky; top: 0; z-index: 30; backdrop-filter: blur(14px); }
+    .topbar { display: flex; align-items: center; justify-content: space-between; gap: 18px; }
+    .brand { display: flex; align-items: center; gap: 14px; }
+    .badge {
+      width: 48px; height: 48px; border-radius: 8px; display: grid; place-items: center;
+      border: 1px solid #0bbcff; background: linear-gradient(145deg, #084870, #062841); color: #78eaff; font-weight: 800;
+      box-shadow: 0 0 22px rgba(0, 187, 255, .2), inset 0 1px rgba(255,255,255,.22);
+    }
+    h1 { margin: 0; font-size: 22px; letter-spacing: 4px; line-height: 1.1; }
+    .sub { margin-top: 5px; color: var(--muted); font-size: 12px; letter-spacing: 3px; }
+    .status { color: var(--green); font-size: 12px; letter-spacing: 2px; font-weight: 800; white-space: nowrap; padding: 8px 12px; border: 1px solid rgba(0, 240, 168, .28); border-radius: 999px; background: rgba(0, 240, 168, .06); box-shadow: 0 0 18px rgba(0, 240, 168, .12); }
+    nav { display: flex; gap: 12px; padding: 18px 0 14px; border-bottom: 1px solid rgba(0, 217, 255, .14); overflow-x: auto; }
+    .tab {
+      min-width: 128px; background: transparent; color: #80aaca; border-color: transparent;
+      border-bottom: 2px solid transparent; border-radius: 0; font-weight: 800;
+    }
+    .tab.active { color: var(--cyan); border-color: var(--cyan); background: rgba(0, 217, 255, .06); }
+    main { padding: 18px 0 28px; }
+    .view { display: none; }
+    .view.active { display: block; }
+    .panel {
+      border: 1px solid rgba(0, 124, 196, .48);
+      background: linear-gradient(180deg, rgba(8, 31, 54, .86), rgba(4, 14, 25, .94));
+      border-radius: 8px;
+      margin-bottom: 16px;
+      overflow: hidden;
+      box-shadow: 0 0 26px rgba(0, 93, 170, .12), inset 0 1px rgba(255,255,255,.04);
+      backdrop-filter: blur(10px);
+    }
+    .panel-title {
+      min-height: 44px; padding: 12px 18px; background: rgba(5, 34, 60, .86);
+      border-bottom: 1px solid rgba(0, 148, 230, .32);
+      display: flex; align-items: center; justify-content: space-between; gap: 10px;
+      color: var(--cyan); font-weight: 900; letter-spacing: 1px;
+      text-shadow: 0 0 16px rgba(0, 217, 255, .28);
+    }
+    .panel-title > span:first-child { white-space: nowrap; }
+    .panel-body { padding: 18px; }
+    .grid { display: grid; gap: 14px; }
+    .grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .grid-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    label { display: block; color: #6fb0dc; font-size: 12px; margin-bottom: 6px; }
+    .hint { color: var(--muted); font-size: 12px; overflow-wrap: anywhere; }
+    .cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+    .stat { min-width: 0; border: 1px solid rgba(0, 160, 235, .42); background: linear-gradient(180deg, rgba(9, 34, 58, .95), rgba(5, 18, 31, .98)); border-radius: 8px; padding: 14px 12px; text-align: center; box-shadow: inset 0 1px rgba(255,255,255,.05); }
+    .stat span { display: block; min-width: 0; color: var(--muted); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .stat b { display: block; color: var(--cyan); font-size: clamp(21px, 1.8vw, 26px); margin: 4px 0; line-height: 1.18; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-shadow: 0 0 15px rgba(0, 217, 255, .24); }
+    .split { display: grid; grid-template-columns: minmax(0, 1fr) 430px; gap: 18px; align-items: start; }
+    .law-grid { display: grid; grid-template-columns: repeat(2, minmax(360px, 1fr)); gap: 14px; }
+    .category { border: 1px solid rgba(0, 124, 196, .38); border-radius: 8px; overflow: hidden; background: rgba(4, 15, 27, .7); box-shadow: 0 12px 24px rgba(0,0,0,.16); }
+    .category.common-laws { grid-column: 1 / -1; border-color: rgba(255,157,46,.42); background: linear-gradient(180deg, rgba(30,22,12,.68), rgba(4,15,27,.78)); }
+    .category h3 { margin: 0; padding: 12px 14px; background: linear-gradient(90deg, rgba(10, 43, 73, .95), rgba(8, 27, 47, .72)); font-size: 14px; display: flex; justify-content: space-between; gap: 12px; align-items: center; }
+    .category.common-laws h3 { background: linear-gradient(90deg, rgba(102,54,12,.92), rgba(8,27,47,.72)); color: #ffd08a; }
+    .common-list { display: grid; grid-template-columns: repeat(2, minmax(360px, 1fr)); }
+    .collapse-btn { width: auto; padding: 6px 10px; border-color: rgba(255,157,46,.45); color: #ffd08a; font-size: 12px; }
+    .category.collapsed .common-list { display: none; }
+    .offense { display: grid; grid-template-columns: minmax(0, 1fr) 56px; gap: 12px; align-items: center; min-height: 92px; padding: 13px 14px; border-top: 1px solid rgba(0, 124, 196, .18); }
+    .offense > div { min-width: 0; }
+    .offense strong { display: block; overflow-wrap: anywhere; line-height: 1.35; }
+    .offense:hover { background: rgba(0, 217, 255, .045); }
+    .offense small { display: flex; flex-wrap: wrap; gap: 7px; align-items: center; color: var(--muted); margin-top: 7px; }
+    .offense button { width: 56px; padding: 8px 0; }
+    .summary-list { min-height: 170px; max-height: 360px; overflow: auto; overflow-wrap: anywhere; border: 1px solid var(--line); border-radius: 8px; background: #06111f; padding: 10px; }
+    .selected { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; padding: 9px; border-bottom: 1px solid rgba(0, 124, 196, .18); border-radius: 6px; }
+    .selected > div { min-width: 0; }
+    .selected strong { display: block; overflow-wrap: anywhere; line-height: 1.35; }
+    .selected:hover { background: rgba(0, 217, 255, .04); }
+    .selected:last-child { border-bottom: 0; }
+    .selected button { padding: 5px 8px; }
+    .toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+    .table-wrap { overflow: auto; }
+    table { width: 100%; border-collapse: collapse; min-width: 1060px; }
+    th, td { border-bottom: 1px solid rgba(0, 124, 196, .22); padding: 10px; text-align: left; font-size: 14px; }
+    th { color: #6db9ed; background: rgba(10, 43, 73, .72); position: sticky; top: 0; }
+    .pill, .type-badge, .metric { display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px; border-radius: 999px; border: 1px solid var(--line); color: var(--yellow); font-size: 12px; white-space: nowrap; }
+    .type-badge.violation { color: var(--yellow); border-color: rgba(255,216,77,.46); background: rgba(255,216,77,.08); }
+    .type-badge.misdemeanor { color: #ff9d2e; border-color: rgba(255,157,46,.52); background: rgba(255,157,46,.08); }
+    .type-badge.felony { color: var(--red); border-color: rgba(255,65,104,.48); background: rgba(255,65,104,.08); }
+    .metric { color: #9bc7e9; border-color: rgba(110,152,187,.28); background: rgba(255,255,255,.03); }
+    .note-line { color: #6fa0c4; font-size: 12px; line-height: 1.48; margin-top: 7px; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; }
+    .checklist { display: grid; gap: 9px; }
+    .check-item { display: flex; gap: 10px; align-items: flex-start; padding: 10px; border: 1px solid rgba(0,124,196,.22); border-radius: 8px; background: rgba(3,12,22,.46); }
+    .check-item input { width: 16px; margin-top: 3px; accent-color: var(--cyan); }
+    .special-control { display: grid; gap: 6px; margin-bottom: 14px; padding: 13px 14px; border: 1px solid rgba(255,157,46,.34); border-radius: 8px; background: linear-gradient(90deg, rgba(255,157,46,.1), rgba(0,217,255,.045)); }
+    .special-control label { display: flex; align-items: center; gap: 10px; margin: 0; color: var(--text); font-size: 14px; font-weight: 800; cursor: pointer; }
+    .special-control input { width: 17px; height: 17px; padding: 0; accent-color: #ff9d2e; }
+    .limit-note { color: #96b9d4; font-size: 12px; }
+    .limit-note strong { color: var(--cyan); }
+    .quick-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+    .package-layout { display: grid; grid-template-columns: minmax(0, 1fr) 430px; gap: 18px; align-items: start; }
+    .package-grid { display: grid; grid-template-columns: repeat(2, minmax(360px, 1fr)); gap: 14px; }
+    .package-card { border: 1px solid rgba(0, 124, 196, .42); border-radius: 8px; padding: 14px; background: linear-gradient(180deg, rgba(7,28,49,.86), rgba(4,15,27,.92)); box-shadow: inset 0 1px rgba(255,255,255,.04); }
+    .package-card h3 { margin: 0 0 8px; color: var(--cyan); font-size: 16px; }
+    .package-card p { margin: 0 0 10px; color: var(--muted); font-size: 12px; line-height: 1.5; }
+    .package-laws { display: grid; gap: 6px; margin-bottom: 12px; }
+    .package-law { display: flex; gap: 8px; align-items: center; color: #bfe7ff; font-size: 13px; padding: 7px 8px; border: 1px solid rgba(0,124,196,.22); border-radius: 7px; background: rgba(3,12,22,.42); }
+    .package-law code { color: var(--cyan); font-family: ui-monospace, Consolas, monospace; }
+    .package-actions { display: flex; gap: 8px; justify-content: flex-end; }
+    .package-summary-list { min-height: 260px; max-height: 440px; overflow: auto; overflow-wrap: anywhere; border: 1px solid var(--line); border-radius: 8px; background: #06111f; padding: 10px; }
+    .package-editor { display: grid; gap: 12px; }
+    .package-edit-card { display: grid; grid-template-columns: 1.1fr 1.6fr 1.8fr auto; gap: 10px; align-items: end; border: 1px solid rgba(0,124,196,.28); border-radius: 8px; padding: 12px; background: rgba(3,12,22,.5); }
+    .package-code-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+    .package-edit-card button { height: 39px; }
+    .report-output { white-space: pre-wrap; min-height: 190px; border: 1px solid var(--line); background: linear-gradient(180deg, #06111f, #04101d); border-radius: 8px; padding: 16px; color: #bfe7ff; line-height: 1.6; box-shadow: inset 0 0 28px rgba(0,0,0,.26); }
+    .map-shell { height: calc(100vh - 220px); min-height: 560px; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: #071526; }
+    .map-shell iframe { width: 100%; height: 100%; border: 0; display: block; }
+    .toast {
+      position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%) translateY(18px);
+      opacity: 0; pointer-events: none; background: #06243a; border: 1px solid var(--cyan);
+      color: white; padding: 10px 16px; border-radius: 999px; transition: .2s ease; z-index: 50;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    @media (max-width: 1100px) {
+      .split, .grid-2, .grid-3, .grid-4, .law-grid, .cards { grid-template-columns: 1fr; }
+      .package-layout, .package-grid { grid-template-columns: 1fr; }
+      .wrap { width: min(100% - 22px, 1540px); }
+      .topbar { align-items: flex-start; }
+      h1 { font-size: 18px; letter-spacing: 2px; }
+      .quick-grid { grid-template-columns: 1fr; }
+    }
+    @media (min-width: 1101px) and (max-width: 1380px) {
+      .law-grid { grid-template-columns: 1fr; }
+      .common-list { grid-template-columns: 1fr; }
+      .package-grid { grid-template-columns: 1fr; }
+    }
+  </style>
 </head>
-<body class="bg-[#111827] text-white overflow-hidden font-sans">
-
-    <!-- 應用程式主容器 -->
-    <div id="app" class="relative w-full h-screen flex">
-        
-        <!-- 地圖渲染容器 (背景改為指定的 #7baece) -->
-        <div id="map" class="w-full h-full z-0 bg-[#7baece]"></div>
-
-        <!-- 自訂右鍵選單 -->
-        <div id="context-menu" class="context-menu">
-            <div class="context-menu-item" onclick="copyMarkerCode()">
-                <i class="fas fa-copy"></i>
-                <span data-i18n="copyCoords">複製座標代碼 (新增地標用)</span>
-            </div>
+<body>
+  <header>
+    <div class="wrap topbar">
+      <div class="brand">
+        <div class="badge">MDT</div>
+        <div>
+          <h1>MOCHIRP LSPD MDT</h1>
+          <div class="sub">洛聖都警察局 行動數據終端 | TERMINAL v1.0</div>
         </div>
-
-        <!-- 頂部標題浮動區塊 -->
-        <div class="absolute top-6 left-6 z-[1000] pointer-events-none">
-            <h1 id="site-title" class="text-3xl md:text-4xl font-extrabold text-white drop-shadow-lg px-4 py-2 bg-[#111827]/80 backdrop-blur-sm rounded-xl border border-gray-700">
-                麻糬警用學習地圖
-            </h1>
-        </div>
-
-        <!-- 左側面板：標記列表 (使用要求的 #111827 底色) -->
-        <div id="sidebar" class="absolute top-0 left-0 h-full w-80 bg-sidebarBg/95 backdrop-blur-md border-r border-gray-800 transform -translate-x-full transition-transform duration-300 ease-in-out z-[1001] shadow-2xl flex flex-col">
-            <!-- 側邊欄頭部 -->
-            <div class="p-5 border-b border-gray-800 flex justify-between items-center bg-[#1f2937]/50">
-                <h2 class="text-xl font-bold flex items-center gap-2 text-accent">
-                    <i class="fas fa-map-marker-alt"></i>
-                    <span data-i18n="markerList">區域列表</span>
-                </h2>
-                <button onclick="toggleSidebar()" class="text-gray-400 hover:text-white transition-colors">
-                    <i class="fas fa-times text-xl"></i>
-                </button>
-            </div>
-            <!-- 標記清單內容區 -->
-            <div id="marker-list-container" class="flex-1 overflow-y-auto p-4 space-y-3">
-                <!-- 標記項目將由 JS 動態生成至此 -->
-            </div>
-        </div>
-
-        <!-- 右側工具列 -->
-        <div class="absolute top-1/2 right-4 transform -translate-y-1/2 flex flex-col space-y-4 z-[1000]">
-            <!-- 展開側邊欄清單按鈕 -->
-            <button onclick="toggleSidebar()" class="toolbar-btn" data-i18n-title="toggleList" title="開關區域列表">
-                <i class="fas fa-list-ul"></i>
-            </button>
-            <!-- 切換標籤顯示按鈕 -->
-            <button onclick="toggleLabels()" class="toolbar-btn" data-i18n-title="toggleLabels" title="開關名稱顯示">
-                <i id="icon-label-toggle" class="fas fa-eye-slash"></i>
-            </button>
-            <!-- 語言切換按鈕 -->
-            <button onclick="toggleLanguage()" class="toolbar-btn mt-4" data-i18n-title="switchLang" title="切換語言">
-                <i class="fas fa-globe"></i>
-            </button>
-        </div>
-
-        <!-- 全域提示訊息 (Toast) -->
-        <div id="toast" class="absolute bottom-6 left-1/2 transform -translate-x-1/2 bg-accent text-white px-6 py-3 rounded-full shadow-lg font-bold opacity-0 transition-opacity duration-300 pointer-events-none z-[2000]">
-            訊息提示
-        </div>
+      </div>
+      <div class="status">● SYSTEM ONLINE</div>
     </div>
+  </header>
 
-    <script>
-        // ==========================================
-        // ★ 1. 標記資料設定區 (新增地標請在這裡修改) ★
-        // ==========================================
-        
-        /* * 【如何新增地標？】
-         * 1. 在地圖上將滑鼠移動到想要標記的位置。
-         * 2. 點擊「右鍵」，選擇「複製座標代碼」。
-         * 3. 回到此程式碼，在 staticMarkers 陣列內，將剛剛複製的代碼貼上。
-         * 4. 根據以下參數說明，修改您的地標資訊。
-         * * 【參數說明】
-         * id       : 地標的唯一辨識碼 (請確保每個地標的 id 不重複)
-         * lat      : 緯度 (Y軸座標，右鍵複製會自動生成)
-         * lng      : 經度 (X軸座標，右鍵複製會自動生成)
-         * name     : 區域名稱 (會顯示在地圖標籤及列表中)
-         * color    : 標記與範圍顏色 (支援 Hex 色碼，如 '#3b82f6' 是紅色，'#3b82f6' 是藍色)
-         * radius   : 範圍半徑 (公尺，數字越大圓圈越大)
-         * imageUrl : 地點照片連結 (選填，請貼上網址 https://... ，若無照片請留空字串 '')
-         * desc     : 詳細說明 (選填，支援多行文字，若無說明請留空字串 '')
-         */
-        const staticMarkers = [
-            {
-                id: 'marker-1772707641853',
-                lat: 2746.53,
-                lng: 2424.89,
-                name: '貓咖',
-                color: '#3b82f6',
-                radius: 50,
-                imageUrl: '',
-                desc: ''
-            },
-            {
-                id: 'marker-1776437302725',
-                lat: 2593.67,
-                lng: 2621.95,
-                name: '修車廠',
-                color: '#3b82f6',
-                radius: 100,
-                imageUrl: '',
-                desc: ''
-            },
-            {
-                id: 'marker-1776436669154',
-                lat: 2948.99,
-                lng: 2848.01,
-                name: '威能橋',
-                color: '#3b82f6',
-                radius: 50,
-                imageUrl: '',
-                desc: ''
-            },
-            {
-                id: 'marker-1772707774794',
-                lat: 3072.17,
-                lng: 3033.00,
-                name: '圓帽山醫院',
-                color: '#3b82f6',
-                radius: 30,
-                imageUrl: '',
-                desc: ''
-            },
-            {
-                id: 'marker-1772707810452',
-                lat: 3622.00,
-                lng: 3472.00,
-                name: '圓帽山高速公路',
-                color: '#3b82f6',
-                radius: 200,
-                imageUrl: '',
-                desc: ''
-            },
-            {
-                id: 'marker-1772707838798',
-                lat: 3320.00,
-                lng: 1130.00,
-                name: '西濱高速公路',
-                color: '#3b82f6',
-                radius: 200,
-                imageUrl: '',
-                desc: ''
-            },
-            {
-                id: 'marker-1772707910105',
-                lat: 3023.96,
-                lng: 1991.09,
-                name: '彩虹停車場',
-                color: '#3b82f6',
-                radius: 50,
-                imageUrl: '',
-                desc: ''
-            },
-            {
-                id: 'marker-1772707946019',
-                lat: 3073.41,
-                lng: 1942.57,
-                name: '市政府',
-                color: '#3b82f6',
-                radius: 40,
-                imageUrl: '',
-                desc: ''
-            },
-            {
-                id: 'marker-1772707967792',
-                lat: 2856.95,
-                lng: 2921.33,
-                name: '大公園',
-                color: '#3b82f6',
-                radius: 100,
-                imageUrl: '',
-                desc: ''
-            },
-            {
-                id: 'marker-1772707995695',
-                lat: 1689.72,
-                lng: 3656.56,
-                name: '佩島大橋',
-                color: '#3b82f6',
-                radius: 100,
-                imageUrl: '',
-                desc: ''
-            },
-            {
-                id: 'marker-1772708027536',
-                lat: 1651.47,
-                lng: 2089.99,
-                name: '機場',
-                color: '#3b82f6',
-                radius: 100,
-                imageUrl: '',
-                desc: ''
-            },
-            {
-                id: 'marker-1772708050848',
-                lat: 2517.37,
-                lng: 1941.30,
-                name: '商店街',
-                color: '#3b82f6',
-                radius: 100,
-                imageUrl: '',
-                desc: ''
-            },
-            {
-                id: 'marker-1772708077196',
-                lat: 2737.98,
-                lng: 2115.17,
-                name: '水區',
-                color: '#3b82f6',
-                radius: 100,
-                imageUrl: '',
-                desc: ''
-            },
-            {
-                id: 'marker-1772708089108',
-                lat: 2305.18,
-                lng: 2901.60,
-                name: '街區',
-                color: '#3b82f6',
-                radius: 200,
-                imageUrl: '',
-                desc: ''
-            },
-            {
-                id: 'marker-1772708112137',
-                lat: 3111.40,
-                lng: 3598.30,
-                name: '米羅公園',
-                color: '#3b82f6',
-                radius: 200,
-                imageUrl: '',
-                desc: ''
-            },
-            {
-                id: 'marker-1772708132492',
-                lat: 3563.99,
-                lng: 3553.43,
-                name: '賭場',
-                color: '#3b82f6',
-                radius: 100,
-                imageUrl: '',
-                desc: ''
-            },
-            {
-                id: 'marker-1772708148016',
-                lat: 3867.48,
-                lng: 2422.62,
-                name: '富人區/豪宅區',
-                color: '#3b82f6',
-                radius: 300,
-                imageUrl: '',
-                desc: ''
-            },
-            {
-                id: 'marker-1772708173450',
-                lat: 3686.98,
-                lng: 2294.79,
-                name: '日蝕大樓/北公寓',
-                color: '#3b82f6',
-                radius: 100,
-                imageUrl: '',
-                desc: ''
-            },
-            {
-                id: 'marker-1772708216548',
-                lat: 3620.00,
-                lng: 2989.00,
-                name: '太平洋銀行',
-                color: '#3b82f6',
-                radius: 100,
-                imageUrl: '',
-                desc: ''
-            },
-            {
-                id: 'marker-1772708288921',
-                lat: 2946.13,
-                lng: 2512.77,
-                name: '白停車場',
-                color: '#3b82f6',
-                radius: 50,
-                imageUrl: '',
-                desc: ''
-            },
-            {
-                id: 'marker-1772708308633',
-                lat: 2933.82,
-                lng: 2602.64,
-                name: '紅白停車場',
-                color: '#3b82f6',
-                radius: 50,
-                imageUrl: '',
-                desc: ''
-            },
-            {
-                id: 'marker-1772708331078',
-                lat: 3303.78,
-                lng: 2397.65,
-                name: '珠寶店',
-                color: '#3b82f6',
-                radius: 30,
-                imageUrl: '',
-                desc: ''
-            },
-            {
-                id: 'marker-1772708377876',
-                lat: 3174.25,
-                lng: 2435.50,
-                name: '樹洞',
-                color: '#3b82f6',
-                radius: 5,
-                imageUrl: '',
-                desc: ''
-            },
-            {
-                id: 'marker-1772708422933',
-                lat: 3166.25,
-                lng: 2887.82,
-                name: '工地缺口',
-                color: '#3b82f6',
-                radius: 5,
-                imageUrl: '',
-                desc: ''
-            },
-            {
-                id: 'marker-1772708467323',
-                lat: 3195.51,
-                lng: 2874.56,
-                name: '旋轉工地',
-                color: '#3b82f6',
-                radius: 50,
-                imageUrl: '',
-                desc: ''
-            },
-            {
-                id: 'marker-1772708505210',
-                lat: 2739.65,
-                lng: 2712.08,
-                name: '車商旁工地',
-                color: '#3b82f6',
-                radius: 50,
-                imageUrl: '',
-                desc: ''
-            },
-            {
-                id: 'marker-1772708617037',
-                lat: 2995.61,
-                lng: 1948.48,
-                name: '麻花卷',
-                color: '#3b82f6',
-                radius: 100,
-                imageUrl: '',
-                desc: ''
-            },
-            {
-                id: 'marker-1772708645886',
-                lat: 3816.49,
-                lng: 3280.23,
-                name: '小舞台',
-                color: '#3b82f6',
-                radius: 100,
-                imageUrl: '',
-                desc: ''
-            },
-            {
-                id: 'marker-1772708753301',
-                lat: 2105.60,
-                lng: 2767.83,
-                name: '車聚廣場',
-                color: '#3b82f6',
-                radius: 100,
-                imageUrl: '',
-                desc: ''
-            },
-            {
-                id: 'marker-1772708771727',
-                lat: 2141.47,
-                lng: 2610.64,
-                name: '體育館',
-                color: '#3b82f6',
-                radius: 100,
-                imageUrl: '',
-                desc: ''
-            },
-            {
-                id: 'marker-1772708793249',
-                lat: 3682.97,
-                lng: 1284.46,
-                name: '博物館',
-                color: '#3b82f6',
-                radius: 100,
-                imageUrl: '',
-                desc: ''
-            },
-            {
-                id: 'marker-1772708812770',
-                lat: 5585.45,
-                lng: 3764.26,
-                name: '中部機場',
-                color: '#3b82f6',
-                radius: 200,
-                imageUrl: '',
-                desc: ''
-            },
-            {
-                id: 'marker-1772708833637',
-                lat: 5581.97,
-                lng: 1365.02,
-                name: '軍事基地',
-                color: '#3b82f6',
-                radius: 500,
-                imageUrl: '',
-                desc: ''
-            },
-            {
-                id: 'marker-1772708856487',
-                lat: 7814.06,
-                lng: 2747.46,
-                name: '北部小鎮',
-                color: '#3b82f6',
-                radius: 200,
-                imageUrl: '',
-                desc: ''
-            },
-            {
-                id: 'marker-1772708876259',
-                lat: 5992.87,
-                lng: 4011.50,
-                name: '中部小鎮',
-                color: '#3b82f6',
-                radius: 200,
-                imageUrl: '',
-                desc: ''
-            },
-            {
-                id: 'marker-1772708890882',
-                lat: 4239.94,
-                lng: 3800.51,
-                name: '大莊園',
-                color: '#3b82f6',
-                radius: 100,
-                imageUrl: '',
-                desc: ''
-            },
-            {
-                id: 'marker-1772708910768',
-                lat: 3446.08,
-                lng: 3969.21,
-                name: '水壩',
-                color: '#3b82f6',
-                radius: 100,
-                imageUrl: '',
-                desc: ''
-            },
-            {
-                id: 'marker-1772708936473',
-                lat: 6997.00,
-                lng: 5097.00,
-                name: '燈塔',
-                color: '#3b82f6',
-                radius: 10,
-                imageUrl: '',
-                desc: ''
-            },
-            {
-                id: 'marker-1772709853885',
-                lat: 2823.36,
-                lng: 2642.35,
-                name: '南公寓',
-                color: '#3b82f6',
-                radius: 100,
-                imageUrl: '',
-                desc: ''
-            },
-            {
-                id: 'marker-1772709880051',
-                lat: 2857.88,
-                lng: 2656.81,
-                name: '就業中心',
-                color: '#3b82f6',
-                radius: 100,
-                imageUrl: '',
-                desc: ''
-            },
-            {
-                id: 'marker-1772708959215',
-                lat: 6747.89,
-                lng: 4265.66,
-                name: '中部小機庫',
-                color: '#3b82f6',
-                radius: 100,
-                imageUrl: '',
-                desc: ''
-            },
-            {
-                id: 'marker-1772708981447',
-                lat: 6198.38,
-                lng: 3586.24,
-                name: '中部湖',
-                color: '#3b82f6',
-                radius: 500,
-                imageUrl: '',
-                desc: ''
-            },
-            {
-                id: 'marker-1772709002824',
-                lat: 2786.71,
-                lng: 3874.95,
-                name: '東部高速公路',
-                color: '#3b82f6',
-                radius: 100,
-                imageUrl: '',
-                desc: ''
-            },
-            {
-                id: 'marker-1772709026124',
-                lat: 2795.90,
-                lng: 3129.65,
-                name: '舊警局',
-                color: '#3b82f6',
-                radius: 30,
-                imageUrl: '',
-                desc: ''
-            },
-            {
-                id: 'marker-1772709686357',
-                lat: 7284.61,
-                lng: 3138.85,
-                name: '山頂觀景台',
-                color: '#3b82f6',
-                radius: 30,
-                imageUrl: '',
-                desc: ''
-            },
-            {
-                id: 'marker-1772709729115',
-                lat: 7297.00,
-                lng: 2319.00,
-                name: '北部纜車站',
-                color: '#3b82f6',
-                radius: 30,
-                imageUrl: '',
-                desc: ''
-            },
-        ];
+  <div class="wrap">
+    <nav>
+      <button class="tab active" data-tab="calc">判刑計算器</button>
+      <button class="tab" data-tab="laws">法律資料庫</button>
+      <button class="tab" data-tab="report">案件報告</button>
+      <button class="tab" data-tab="tools">法條套裝</button>
+      <button class="tab" data-tab="map">警用地圖</button>
+    </nav>
+  </div>
 
-        // ==========================================
-        // 2. 多國語言 (i18n) 設定字典
-        // ==========================================
-        const i18nDict = {
-            'zh-TW': {
-                markerList: '區域列表', 
-                toggleList: '開關區域列表', 
-                toggleLabels: '開關名稱顯示', 
-                switchLang: 'Switch to English',
-                copyCoords: '複製座標代碼 (新增地標用)',
-                msgCopySuccess: '代碼已複製！請貼上至 staticMarkers 中',
-                msgError: '發生錯誤：',
-                noDesc: '無詳細說明'
-            },
-            'en': {
-                markerList: 'Zone List', 
-                toggleList: 'Toggle Zone List', 
-                toggleLabels: 'Toggle Labels', 
-                switchLang: '切換至繁體中文',
-                copyCoords: 'Copy Code (For New Marker)',
-                msgCopySuccess: 'Code copied! Paste it into staticMarkers.',
-                msgError: 'Error: ',
-                noDesc: 'No description available'
-            }
-        };
+  <main class="wrap">
+    <section id="calc" class="view active">
+      <div class="split">
+        <div>
+          <div class="panel">
+            <div class="panel-title">
+              <span>罪名選擇</span>
+              <div class="toolbar">
+                <input id="crimeSearch" placeholder="搜尋罪名..." style="width:220px" />
+                <button class="danger" id="clearSelected">清空</button>
+              </div>
+            </div>
+            <div class="panel-body">
+              <div class="special-control">
+                <label><input id="specialListToggle" type="checkbox" /> 犯人有在特殊名單上</label>
+                <div class="limit-note" id="ticketLimitNote">一般犯人最多可開 <strong>3</strong> 張罰單；勾選特殊名單後最多 <strong>6</strong> 張。</div>
+              </div>
+              <div id="lawPicker" class="law-grid"></div>
+            </div>
+          </div>
+        </div>
+        <aside class="panel">
+          <div class="panel-title">
+            <span>罰款計算</span>
+            <button class="good" id="copyVerdict">複製判決</button>
+          </div>
+          <div class="panel-body">
+            <div class="grid grid-2">
+              <div>
+                <label>折扣 / 減刑 (%)</label>
+                <input id="discount" type="number" min="0" max="100" value="0" />
+              </div>
+              <div>
+                <label>手動加罰金 ($)</label>
+                <input id="extraFine" type="number" min="0" value="0" />
+              </div>
+            </div>
+            <div class="cards" style="margin:14px 0">
+              <div class="stat"><span>總罰金</span><b id="totalFine">$0</b><span>NTD</span></div>
+              <div class="stat"><span>總刑期</span><b id="totalPrison">0</b><span>月</span></div>
+              <div class="stat"><span>公共服務</span><b id="totalLabor">0</b><span>次</span></div>
+              <div class="stat"><span>罪名計數</span><b id="totalCount">0</b><span>項</span></div>
+            </div>
+            <div class="summary-list" id="selectedList">尚未輸入任何罪名</div>
+          </div>
+        </aside>
+      </div>
+    </section>
 
-        let currentLang = 'zh-TW'; // 預設語言為繁體中文
+    <section id="laws" class="view">
+      <div class="panel">
+        <div class="panel-title">
+          <span>資料庫記錄</span>
+          <div class="toolbar">
+            <button id="exportRules">匯出 JSON</button>
+            <button id="resetRules" class="danger">還原預設</button>
+          </div>
+        </div>
+        <div class="panel-body">
+          <div class="hint" style="margin-bottom:12px">法條類型、罰金、刑期/公共服務可直接編輯，資料會自動存在此瀏覽器。違規與輕罪的刑期數字會計入公共服務，重罪才計入監禁月數；同時有輕罪與重罪時，公共服務次數會併入監禁總刑期。</div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>編號</th><th>類別</th><th>罪名</th><th>類型</th><th>罰金</th><th>刑期(月)</th><th>公共服務(次)</th><th>備註</th>
+                </tr>
+              </thead>
+              <tbody id="rulesTable"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-title">
+          <span>法條套裝設定</span>
+          <button id="addLawPackage" class="primary">新增套裝</button>
+        </div>
+        <div class="panel-body">
+          <div class="hint" style="margin-bottom:12px">可設定法條套裝頁的快速套用組合。每個套裝最多填 3 個法條編號，例如 1-008、5-005、2-004。</div>
+          <div id="packageEditor" class="package-editor"></div>
+        </div>
+      </div>
+    </section>
 
-        // 翻譯函數
-        function t(key) {
-            return i18nDict[currentLang][key] || key;
-        }
+    <section id="report" class="view">
+      <div class="panel">
+        <div class="panel-title">
+          <span>案件報告</span>
+          <div class="toolbar">
+            <button class="primary" id="generateReport">生成案件報告</button>
+            <button class="good" id="copyReport">複製報告</button>
+          </div>
+        </div>
+        <div class="panel-body grid">
+          <div class="grid grid-3">
+            <div><label>案件編號</label><input id="caseNo" placeholder="空白可自動產生" /></div>
+            <div><label>發生時間</label><input id="caseTime" placeholder="空白可自動填入" /></div>
+            <div><label>地點</label><input id="casePlace" placeholder="例：洛聖都市區、沙漠公路..." /></div>
+          </div>
+          <div class="grid grid-3">
+            <div><label>嫌疑人</label><input id="suspect" placeholder="姓名 / ID" /></div>
+            <div><label>被害人</label><input id="victim" placeholder="姓名 / ID 或 無" /></div>
+            <div><label>證人</label><input id="witness" placeholder="姓名 / ID 或 無" /></div>
+          </div>
+          <div><label>簡述案件經過</label><textarea id="caseSummary" placeholder="簡短描述事件起因與經過..."></textarea></div>
+          <div><label>警方處理過程</label><textarea id="policeAction" placeholder="警方如何介入、處置程序..."></textarea></div>
+          <div class="grid grid-3">
+            <div><label>是否需要後續偵辦</label><input id="followUp" placeholder="是 / 否" /></div>
+            <div><label>是否轉交其他單位</label><input id="handoff" placeholder="是 / 否，或填單位名稱" /></div>
+            <div><label>主辦警員</label><input id="officer" placeholder="警員姓名 / 警號" /></div>
+          </div>
+          <div class="report-output" id="reportOutput">尚未生成報告。請填寫上方欄位後點擊「生成案件報告」。</div>
+        </div>
+      </div>
+    </section>
 
-        function updateUIi18n() {
-            document.querySelectorAll('[data-i18n]').forEach(el => {
-                el.innerText = t(el.getAttribute('data-i18n'));
-            });
-            document.querySelectorAll('[data-i18n-title]').forEach(el => {
-                el.title = t(el.getAttribute('data-i18n-title'));
-            });
-            renderMarkerList(); // 重繪列表以更新翻譯
-        }
+    <section id="map" class="view">
+      <div class="panel">
+        <div class="panel-title">
+          <span>警用地圖</span>
+        </div>
+        <div class="panel-body">
+          <div class="map-shell">
+            <iframe id="mapFrame" title="police map"></iframe>
+          </div>
+        </div>
+      </div>
+    </section>
 
-        // ==========================================
-        // 3. 全域狀態與變數宣告
-        // ==========================================
-        let map;                    
-        let isSidebarOpen = false;  
-        let isLabelsVisible = false;
-        
-        let markersData = {};       // 儲存從 staticMarkers 匯入的資料
-        let mapLayers = {};         // 儲存 Leaflet 圖層對象
-        
-        let contextMenuLocation = null; // 紀錄右鍵點擊時的經緯度
+    <section id="tools" class="view">
+      <div class="package-layout">
+        <div class="panel">
+          <div class="panel-title">
+            <span>法條套裝</span>
+            <button class="danger" id="clearSelectedFromPackages">清空已選</button>
+          </div>
+          <div class="panel-body">
+            <div class="hint" style="margin-bottom:14px">套裝會一次加入常見三條法條，仍會遵守一般 3 張、特殊名單 6 張的罰單上限。</div>
+            <div id="packageGrid" class="package-grid"></div>
+          </div>
+        </div>
+        <aside class="panel">
+          <div class="panel-title">
+            <span>套裝計算機</span>
+            <button class="good" id="copyPackageVerdict">複製判決</button>
+          </div>
+          <div class="panel-body">
+            <div class="grid grid-2" style="margin-bottom:14px">
+              <div>
+                <label>折扣 / 減刑 (%)</label>
+                <input id="packageDiscount" type="number" min="0" max="100" value="0" />
+              </div>
+              <div>
+                <label>手動加罰金 ($)</label>
+                <input id="packageExtraFine" type="number" min="0" value="0" />
+              </div>
+            </div>
+            <div class="cards" style="margin-bottom:14px">
+              <div class="stat"><span>總罰金</span><b id="packageTotalFine">$0</b><span>NTD</span></div>
+              <div class="stat"><span>總刑期</span><b id="packageTotalPrison">0</b><span>月</span></div>
+              <div class="stat"><span>公共服務</span><b id="packageTotalLabor">0</b><span>次</span></div>
+              <div class="stat"><span>罪名計數</span><b id="packageTotalCount">0</b><span>項</span></div>
+            </div>
+            <div class="package-summary-list" id="packageSelectedList">尚未套用任何法條套裝</div>
+          </div>
+        </aside>
+      </div>
+    </section>
+  </main>
 
-        // ==========================================
-        // 4. 畫面與 UI 互動函式
-        // ==========================================
-        
-        window.showToast = (msg, duration = 3000) => {
-            const toast = document.getElementById('toast');
-            toast.innerText = msg;
-            toast.style.opacity = '1';
-            setTimeout(() => { toast.style.opacity = '0'; }, duration);
-        };
+  <div class="toast" id="toast"></div>
 
-        window.toggleSidebar = () => {
-            const sidebar = document.getElementById('sidebar');
-            isSidebarOpen = !isSidebarOpen;
-            if (isSidebarOpen) {
-                sidebar.classList.remove('-translate-x-full');
-            } else {
-                sidebar.classList.add('-translate-x-full');
-            }
-        };
+  <script>
+    const STORAGE_KEY = 'mochirp-lspd-mdt-rules-v1-lawdoc';
+    const PACKAGE_STORAGE_KEY = 'mochirp-lspd-mdt-law-packages-v1';
+    const DEFAULT_RULES = [
+          {
+                "id": "1-001",
+                "code": "1-001",
+                "category": "交通相關",
+                "type": "違規",
+                "name": "違反交通號誌",
+                "fine": 500,
+                "prison": 0,
+                "labor": 0,
+                "sentence": 0,
+                "note": "違反交通燈或交通號誌行車"
+          },
+          {
+                "id": "1-002",
+                "code": "1-002",
+                "category": "交通相關",
+                "type": "違規",
+                "name": "違規停車",
+                "fine": 500,
+                "prison": 0,
+                "labor": 0,
+                "sentence": 0,
+                "note": "在限制停車或是禁止停車的地方停車或是以未經許可的方式停車"
+          },
+          {
+                "id": "1-003",
+                "code": "1-003",
+                "category": "交通相關",
+                "type": "違規",
+                "name": "超速或危險駕駛",
+                "fine": 1000,
+                "prison": 0,
+                "labor": 0,
+                "sentence": 0,
+                "note": "在道路上以危險方式駕車、超過規定之最高時速80公里"
+          },
+          {
+                "id": "1-004",
+                "code": "1-004",
+                "category": "交通相關",
+                "type": "違規",
+                "name": "無照駕駛",
+                "fine": 1000,
+                "prison": 0,
+                "labor": 10,
+                "sentence": 10,
+                "note": "未持有其駕駛的車輛所屬車輛種類的駕駛執照或執照過期失效"
+          },
+          {
+                "id": "1-005",
+                "code": "1-005",
+                "category": "交通相關",
+                "type": "違規",
+                "name": "肇事逃逸",
+                "fine": 1000,
+                "prison": 0,
+                "labor": 0,
+                "sentence": 0,
+                "note": "發生車禍事故當下，肇事者沒有下車查看受害者傷亡情形或留下來處理好現場，就立即自行離開"
+          },
+          {
+                "id": "1-006",
+                "code": "1-006",
+                "category": "交通相關",
+                "type": "輕罪",
+                "name": "駕駛非自己名下車輛",
+                "fine": 3000,
+                "prison": 0,
+                "labor": 10,
+                "sentence": 10,
+                "note": "非試駕的情況下，在路上駕駛非自己名下的車輛"
+          },
+          {
+                "id": "1-007",
+                "code": "1-007",
+                "category": "交通相關",
+                "type": "輕罪",
+                "name": "未禮讓緊急車輛",
+                "fine": 3000,
+                "prison": 0,
+                "labor": 10,
+                "sentence": 10,
+                "note": "未禮讓值勤中的救護車、消防車、警備車等通行"
+          },
+          {
+                "id": "1-008",
+                "code": "1-008",
+                "category": "交通相關",
+                "type": "輕罪",
+                "name": "利用交通工具拒捕",
+                "fine": 1000,
+                "prison": 0,
+                "labor": 10,
+                "sentence": 10,
+                "note": "利用交通工具逃避逮捕"
+          },
+          {
+                "id": "1-009",
+                "code": "1-009",
+                "category": "交通相關",
+                "type": "輕罪",
+                "name": "徒步拒捕",
+                "fine": 800,
+                "prison": 0,
+                "labor": 10,
+                "sentence": 10,
+                "note": "徒步逃避逮捕"
+          },
+          {
+                "id": "1-010",
+                "code": "1-010",
+                "category": "交通相關",
+                "type": "重罪",
+                "name": "搶奪公職車輛",
+                "fine": 10000,
+                "prison": 15,
+                "labor": 0,
+                "sentence": 15,
+                "note": "搶奪政府機關之載具(包括但不限於：汽車、直升機、摩托車、船隻、噴射機、民航機、輕航機)"
+          },
+          {
+                "id": "1-011",
+                "code": "1-011",
+                "category": "交通相關",
+                "type": "重罪",
+                "name": "酒後駕駛",
+                "fine": 2000,
+                "prison": 15,
+                "labor": 0,
+                "sentence": 15,
+                "note": "在酒精、酒類飲品影響下控制並駕駛機動車輛"
+          },
+          {
+                "id": "1-012",
+                "code": "1-012",
+                "category": "交通相關",
+                "type": "重罪",
+                "name": "惡意衝撞市民",
+                "fine": 5000,
+                "prison": 20,
+                "labor": 0,
+                "sentence": 20,
+                "note": "駕駛任何載具惡意衝撞市民"
+          },
+          {
+                "id": "1-013",
+                "code": "1-013",
+                "category": "交通相關",
+                "type": "輕罪",
+                "name": "阻礙交通",
+                "fine": 1500,
+                "prison": 0,
+                "labor": 10,
+                "sentence": 10,
+                "note": "無任何理由占用車道使交通系統無法正常運作"
+          },
+          {
+                "id": "1-014",
+                "code": "1-014",
+                "category": "交通相關",
+                "type": "違規",
+                "name": "噪音駕駛",
+                "fine": 500,
+                "prison": 0,
+                "labor": 0,
+                "sentence": 0,
+                "note": "於公共道路上惡意製造噪音（如排氣聲過大、喇叭長鳴），嚴重影響公共秩序或市民安寧"
+          },
+          {
+                "id": "1-015",
+                "code": "1-015",
+                "category": "交通相關",
+                "type": "重罪",
+                "name": "偷車罪",
+                "fine": 1500,
+                "prison": 15,
+                "labor": 0,
+                "sentence": 15,
+                "note": "偷竊車輛作為己用"
+          },
+          {
+                "id": "2-001",
+                "code": "2-001",
+                "category": "民事或傷害罪行相關",
+                "type": "輕罪",
+                "name": "威脅或恐嚇市民",
+                "fine": 500,
+                "prison": 0,
+                "labor": 10,
+                "sentence": 10,
+                "note": "以加害生命、身體、自由、名譽、財產之事恐嚇他人"
+          },
+          {
+                "id": "2-002",
+                "code": "2-002",
+                "category": "民事或傷害罪行相關",
+                "type": "輕罪",
+                "name": "誤傷",
+                "fine": 1500,
+                "prison": 0,
+                "labor": 15,
+                "sentence": 15,
+                "note": "因正當行為但不正當操作使他人受到傷害"
+          },
+          {
+                "id": "2-003",
+                "code": "2-003",
+                "category": "民事或傷害罪行相關",
+                "type": "輕罪",
+                "name": "勒索市民",
+                "fine": 2000,
+                "prison": 0,
+                "labor": 15,
+                "sentence": 15,
+                "note": "以恫嚇的方式作出不當要求，為了使自己或另一人獲益，或意圖使另一人遭受損失"
+          },
+          {
+                "id": "2-004",
+                "code": "2-004",
+                "category": "民事或傷害罪行相關",
+                "type": "輕罪",
+                "name": "綁架市民",
+                "fine": 10000,
+                "prison": 0,
+                "labor": 20,
+                "sentence": 20,
+                "note": "以任何目的綁架他人或綁架他人當人質"
+          },
+          {
+                "id": "2-005",
+                "code": "2-005",
+                "category": "民事或傷害罪行相關",
+                "type": "輕罪",
+                "name": "傷害市民",
+                "fine": 15000,
+                "prison": 0,
+                "labor": 20,
+                "sentence": 20,
+                "note": "因襲擊他人致造成身體傷害，不只是侷限於身體，分為身體上的傷害與精神上的傷害，如果精神上受到傷害，仍可能成立輕微傷害罪(罰款$500;刑期:10)"
+          },
+          {
+                "id": "2-006",
+                "code": "2-006",
+                "category": "民事或傷害罪行相關",
+                "type": "重罪",
+                "name": "擊暈市民",
+                "fine": 30000,
+                "prison": 20,
+                "labor": 0,
+                "sentence": 20,
+                "note": "攻擊致使市民失去行動能力"
+          },
+          {
+                "id": "2-007",
+                "code": "2-007",
+                "category": "民事或傷害罪行相關",
+                "type": "重罪",
+                "name": "傷害公職人員",
+                "fine": 20000,
+                "prison": 20,
+                "labor": 0,
+                "sentence": 20,
+                "note": "因襲擊他人致造成身體傷害，不只是侷限於身體，分為身體上的傷害與精神上的傷害，如果精神上受到傷害，仍可能成立輕微傷害罪(罰款$500;刑期:10)"
+          },
+          {
+                "id": "2-008",
+                "code": "2-008",
+                "category": "民事或傷害罪行相關",
+                "type": "重罪",
+                "name": "綁架公職人員",
+                "fine": 35000,
+                "prison": 20,
+                "labor": 0,
+                "sentence": 20,
+                "note": "以任何目的綁架公職人員或綁架公職人員當人質"
+          },
+          {
+                "id": "2-009",
+                "code": "2-009",
+                "category": "民事或傷害罪行相關",
+                "type": "重罪",
+                "name": "擊暈公職人員",
+                "fine": 50000,
+                "prison": 30,
+                "labor": 0,
+                "sentence": 30,
+                "note": "攻擊致使公職人員失去正常行為能力"
+          },
+          {
+                "id": "2-010",
+                "code": "2-010",
+                "category": "民事或傷害罪行相關",
+                "type": "輕罪",
+                "name": "妨礙公務",
+                "fine": 3000,
+                "prison": 0,
+                "labor": 10,
+                "sentence": 10,
+                "note": "一切阻擾公務員行使職務的行為，包括以暴力、恐嚇等方式施加於正在執行職務的公務員，或是侮辱公務員、政府機構等等"
+          },
+          {
+                "id": "2-011",
+                "code": "2-011",
+                "category": "民事或傷害罪行相關",
+                "type": "輕罪",
+                "name": "公然侮辱",
+                "fine": 5000,
+                "prison": 0,
+                "labor": 20,
+                "sentence": 20,
+                "note": "不涉及敘述事實的言語謾罵、動作或文字圖畫"
+          },
+          {
+                "id": "2-012",
+                "code": "2-012",
+                "category": "民事或傷害罪行相關",
+                "type": "輕罪",
+                "name": "公共危險",
+                "fine": 2000,
+                "prison": 0,
+                "labor": 15,
+                "sentence": 15,
+                "note": "足以造成特定或不特定多數人死亡或身體健康受到傷害以及財物受損等嚴重後果之具有公共危險性之犯罪行為"
+          },
+          {
+                "id": "2-013",
+                "code": "2-013",
+                "category": "民事或傷害罪行相關",
+                "type": "輕罪",
+                "name": "妨害風化",
+                "fine": 800,
+                "prison": 0,
+                "labor": 10,
+                "sentence": 10,
+                "note": "媒介色情、提供場所給人為性交或猥褻行為、意圖營利而強迫男女與他人為性交或猥褻、在大庭廣眾下為猥褻行為、到散布猥褻物品等等"
+          },
+          {
+                "id": "2-014",
+                "code": "2-014",
+                "category": "民事或傷害罪行相關",
+                "type": "輕罪",
+                "name": "性騷擾",
+                "fine": 1500,
+                "prison": 0,
+                "labor": 10,
+                "sentence": 10,
+                "note": "任何人向別人做出一些不受歡迎而帶有性意味的冒犯行為，令對方感到不安、被侮辱、受威嚇或不被尊重"
+          },
+          {
+                "id": "2-015",
+                "code": "2-015",
+                "category": "民事或傷害罪行相關",
+                "type": "輕罪",
+                "name": "情色交易",
+                "fine": 1500,
+                "prison": 0,
+                "labor": 10,
+                "sentence": 10,
+                "note": "與他人發生性行為以賺取金錢或任何回報"
+          },
+          {
+                "id": "2-016",
+                "code": "2-016",
+                "category": "民事或傷害罪行相關",
+                "type": "輕罪",
+                "name": "毀損他人財物",
+                "fine": 3000,
+                "prison": 0,
+                "labor": 10,
+                "sentence": 10,
+                "note": "無合法辯解而摧毀或損壞屬於他人的財產"
+          },
+          {
+                "id": "2-017",
+                "code": "2-017",
+                "category": "民事或傷害罪行相關",
+                "type": "輕罪",
+                "name": "盜竊他人財物",
+                "fine": 3000,
+                "prison": 0,
+                "labor": 10,
+                "sentence": 10,
+                "note": "不誠實地挪佔屬於他人的財物，意圖永久奪去他人的財物"
+          },
+          {
+                "id": "2-018",
+                "code": "2-018",
+                "category": "民事或傷害罪行相關",
+                "type": "輕罪",
+                "name": "擾亂治安",
+                "fine": 1000,
+                "prison": 0,
+                "labor": 10,
+                "sentence": 10,
+                "note": "包括但不限於:以非必要的噪音破壞鄰里、社區的安靜和良好秩序"
+          },
+          {
+                "id": "2-019",
+                "code": "2-019",
+                "category": "民事或傷害罪行相關",
+                "type": "輕罪",
+                "name": "公眾場所制造噪音",
+                "fine": 1000,
+                "prison": 0,
+                "labor": 10,
+                "sentence": 10,
+                "note": "公眾地方發出的噪音，包括電視機、冷氣機或狗隻等的噪音，以及源自公眾地方的收音機、小販或揚聲器等的噪音"
+          },
+          {
+                "id": "2-020",
+                "code": "2-020",
+                "category": "民事或傷害罪行相關",
+                "type": "輕罪",
+                "name": "侵犯他人隱私或竊聽竊錄罪",
+                "fine": 800,
+                "prison": 0,
+                "labor": 10,
+                "sentence": 10,
+                "note": "A.利用工具或設備窺視他人非公開的活動或身體隱私部位\nB.沒有正當理由利用工具、設備、錄音、照相、錄影或以電磁等方式窺視、竊聽、竊錄他人非公開之活動、言論、談話或身體隱私部位\nC.以錄音、照相、錄影或電磁紀錄竊錄他人非公開之活動、言論、談話或身體隱私部位"
+          },
+          {
+                "id": "2-021",
+                "code": "2-021",
+                "category": "民事或傷害罪行相關",
+                "type": "輕罪",
+                "name": "詐騙",
+                "fine": 1500,
+                "prison": 0,
+                "labor": 10,
+                "sentence": 10,
+                "note": "故意欺騙以獲取不公平或非法收益，或剝奪受害者的合法權利"
+          },
+          {
+                "id": "2-022",
+                "code": "2-022",
+                "category": "民事或傷害罪行相關",
+                "type": "輕罪",
+                "name": "未能出示身份證明文件或執照",
+                "fine": 3000,
+                "prison": 0,
+                "labor": 10,
+                "sentence": 10,
+                "note": "未能出示有效身分證明文件或執照而沒有合理解釋"
+          },
+          {
+                "id": "2-023",
+                "code": "2-023",
+                "category": "民事或傷害罪行相關",
+                "type": "輕罪",
+                "name": "非法途徑取得執照",
+                "fine": 2000,
+                "prison": 0,
+                "labor": 10,
+                "sentence": 10,
+                "note": "不按規程、秩序、手續、法律規定的標準、不是權力機關簽發的證件"
+          },
+          {
+                "id": "2-024",
+                "code": "2-024",
+                "category": "民事或傷害罪行相關",
+                "type": "重罪",
+                "name": "越獄",
+                "fine": 4000,
+                "prison": 20,
+                "labor": 0,
+                "sentence": 20,
+                "note": "罪犯於服刑期間有任何逃離監獄之行為"
+          },
+          {
+                "id": "2-025",
+                "code": "2-025",
+                "category": "民事或傷害罪行相關",
+                "type": "重罪",
+                "name": "協助越獄",
+                "fine": 2000,
+                "prison": 20,
+                "labor": 0,
+                "sentence": 20,
+                "note": "協助越獄犯完成任何越獄行為"
+          },
+          {
+                "id": "2-026",
+                "code": "2-026",
+                "category": "民事或傷害罪行相關",
+                "type": "輕罪",
+                "name": "不服從警方指令",
+                "fine": 2000,
+                "prison": 0,
+                "labor": 10,
+                "sentence": 10,
+                "note": "於執法人員依法執行職務（如盤查、截停、要求出示證件）時，拒絕配合或惡意拖延"
+          },
+          {
+                "id": "2-027",
+                "code": "2-027",
+                "category": "民事或傷害罪行相關",
+                "type": "輕罪",
+                "name": "在公共場合揮舞武器",
+                "fine": 2000,
+                "prison": 0,
+                "labor": 10,
+                "sentence": 10,
+                "note": "於非正當防衛或任務情境，在公共區域持械恐嚇或展示武器，導致市民恐慌或影響公共安全"
+          },
+          {
+                "id": "2-028",
+                "code": "2-028",
+                "category": "民事或傷害罪行相關",
+                "type": "輕罪",
+                "name": "非法侵入私人場所",
+                "fine": 3000,
+                "prison": 0,
+                "labor": 10,
+                "sentence": 10,
+                "note": "未經允許擅自進入住宅或私人商業建築，雖未造成財產損失仍屬違法行為"
+          },
+          {
+                "id": "2-029",
+                "code": "2-029",
+                "category": "民事或傷害罪行相關",
+                "type": "輕罪",
+                "name": "公共滋擾",
+                "fine": 800,
+                "prison": 0,
+                "labor": 10,
+                "sentence": 10,
+                "note": "於醫院、警局、商店等公共場合長時間鬧場、喧嘩或其他行為，導致公共場所秩序混亂或阻礙他人正常活動"
+          },
+          {
+                "id": "2-030",
+                "code": "2-030",
+                "category": "民事或傷害罪行相關",
+                "type": "輕罪",
+                "name": "干擾審訊或調查",
+                "fine": 1500,
+                "prison": 0,
+                "labor": 10,
+                "sentence": 10,
+                "note": "於警方或司法機關進行審訊、調查時，惡意干擾、打斷或阻礙調查過程"
+          },
+          {
+                "id": "2-031",
+                "code": "2-031",
+                "category": "民事或傷害罪行相關",
+                "type": "輕罪",
+                "name": "公共猥褻行為",
+                "fine": 800,
+                "prison": 0,
+                "labor": 10,
+                "sentence": 10,
+                "note": "於公共場合裸露、脫衣或做出不雅舉動，雖未涉及性交易，仍屬違法"
+          },
+          {
+                "id": "2-032",
+                "code": "2-032",
+                "category": "民事或傷害罪行相關",
+                "type": "輕罪",
+                "name": "擅闖管制區域",
+                "fine": 1500,
+                "prison": 0,
+                "labor": 10,
+                "sentence": 10,
+                "note": "未經允許進入警局、醫院 restricted 區域或其他受管制場所"
+          },
+          {
+                "id": "2-033",
+                "code": "2-033",
+                "category": "民事或傷害罪行相關",
+                "type": "輕罪",
+                "name": "妨礙拘捕",
+                "fine": 3000,
+                "prison": 0,
+                "labor": 10,
+                "sentence": 10,
+                "note": "於警方依法拘捕他人時，第三人以阻擋、干擾或脅迫方式妨礙執法"
+          },
+          {
+                "id": "3-001",
+                "code": "3-001",
+                "category": "違禁品相關",
+                "type": "重罪",
+                "name": "非法持有CLASS A槍械",
+                "fine": 5000,
+                "prison": 20,
+                "labor": 0,
+                "sentence": 20,
+                "note": "未持有武器許可證非法持有半自動型槍械"
+          },
+          {
+                "id": "3-002",
+                "code": "3-002",
+                "category": "違禁品相關",
+                "type": "重罪",
+                "name": "非法持有CLASS B槍械",
+                "fine": 10000,
+                "prison": 20,
+                "labor": 0,
+                "sentence": 20,
+                "note": "非法持有全自動型槍械"
+          },
+          {
+                "id": "3-003",
+                "code": "3-003",
+                "category": "違禁品相關",
+                "type": "重罪",
+                "name": "非法持有未經登記的槍械",
+                "fine": 1500,
+                "prison": 20,
+                "labor": 0,
+                "sentence": 20,
+                "note": "持有未經警政署登記手續登記的槍械"
+          },
+          {
+                "id": "3-004",
+                "code": "3-004",
+                "category": "違禁品相關",
+                "type": "重罪",
+                "name": "販賣非法槍械",
+                "fine": 2500,
+                "prison": 20,
+                "labor": 0,
+                "sentence": 20,
+                "note": "販賣任何未經執法部門登記之槍枝"
+          },
+          {
+                "id": "3-005",
+                "code": "3-005",
+                "category": "違禁品相關",
+                "type": "重罪",
+                "name": "持有危險物品",
+                "fine": 1000,
+                "prison": 20,
+                "labor": 0,
+                "sentence": 20,
+                "note": "持有執法部門登記在案之危險物品"
+          },
+          {
+                "id": "3-006",
+                "code": "3-006",
+                "category": "違禁品相關",
+                "type": "輕罪",
+                "name": "持有贓物",
+                "fine": 2000,
+                "prison": 0,
+                "labor": 20,
+                "sentence": 20,
+                "note": "持有執法部門登記在案之贓物"
+          },
+          {
+                "id": "3-007",
+                "code": "3-007",
+                "category": "違禁品相關",
+                "type": "重罪",
+                "name": "販賣非法物品",
+                "fine": 5000,
+                "prison": 15,
+                "labor": 0,
+                "sentence": 15,
+                "note": "販賣不法所得"
+          },
+          {
+                "id": "3-008",
+                "code": "3-008",
+                "category": "違禁品相關",
+                "type": "輕罪",
+                "name": "持有黑錢/非法物品",
+                "fine": 3000,
+                "prison": 0,
+                "labor": 20,
+                "sentence": 20,
+                "note": "持有執法部門登記在案之黑錢/非法物品"
+          },
+          {
+                "id": "3-009",
+                "code": "3-009",
+                "category": "違禁品相關",
+                "type": "重罪",
+                "name": "販賣毒品",
+                "fine": 5000,
+                "prison": 15,
+                "labor": 0,
+                "sentence": 15,
+                "note": "販賣執法部門登記在案之各類級毒品"
+          },
+          {
+                "id": "3-010",
+                "code": "3-010",
+                "category": "違禁品相關",
+                "type": "重罪",
+                "name": "吸毒",
+                "fine": 800,
+                "prison": 10,
+                "labor": 0,
+                "sentence": 10,
+                "note": "吸食執法部門登記在案之各類級毒品"
+          },
+          {
+                "id": "3-011",
+                "code": "3-011",
+                "category": "違禁品相關",
+                "type": "重罪",
+                "name": "非法持有毒品",
+                "fine": 4000,
+                "prison": 20,
+                "labor": 0,
+                "sentence": 20,
+                "note": "持有執法部門登記在案之各類級毒品"
+          },
+          {
+                "id": "3-012",
+                "code": "3-012",
+                "category": "違禁品相關",
+                "type": "重罪",
+                "name": "非法持有大量毒品",
+                "fine": 10000,
+                "prison": 20,
+                "labor": 0,
+                "sentence": 20,
+                "note": "持有執法部門登記在案之各類級毒品及材料總計超過50個"
+          },
+          {
+                "id": "3-013",
+                "code": "3-013",
+                "category": "違禁品相關",
+                "type": "重罪",
+                "name": "非法種植受管制植物",
+                "fine": 3000,
+                "prison": 20,
+                "labor": 0,
+                "sentence": 20,
+                "note": "種植執法部門登記在案之各類級毒品之原材料"
+          },
+          {
+                "id": "3-014",
+                "code": "3-014",
+                "category": "違禁品相關",
+                "type": "重罪",
+                "name": "未經許可持有公職專用物品",
+                "fine": 3000,
+                "prison": 20,
+                "labor": 0,
+                "sentence": 20,
+                "note": "非公職人員且持有公職人員相關物品者"
+          },
+          {
+                "id": "3-015",
+                "code": "3-015",
+                "category": "違禁品相關",
+                "type": "重罪",
+                "name": "非法販賣公職專用物品",
+                "fine": 5000,
+                "prison": 20,
+                "labor": 0,
+                "sentence": 20,
+                "note": "販賣公職人員相關器材（包括但不限於：車輛、直升機、機車、船隻、槍械、輔具、文書用品、耗材）"
+          },
+          {
+                "id": "3-016",
+                "code": "3-016",
+                "category": "違禁品相關",
+                "type": "輕罪",
+                "name": "未誠實告知執法人員身上持有傷害性物品",
+                "fine": 3000,
+                "prison": 0,
+                "labor": 10,
+                "sentence": 10,
+                "note": "經執法人員詢問後未確實回報身上持有傷害性物品"
+          },
+          {
+                "id": "3-017",
+                "code": "3-017",
+                "category": "違禁品相關",
+                "type": "重罪",
+                "name": "非法使用槍械",
+                "fine": 6000,
+                "prison": 20,
+                "labor": 0,
+                "sentence": 20,
+                "note": "使用槍械作非法用途"
+          },
+          {
+                "id": "5-001",
+                "code": "5-001",
+                "category": "搶劫、嚴重危害公共安全或走私相關",
+                "type": "重罪",
+                "name": "毀損金融設施",
+                "fine": 5000,
+                "prison": 10,
+                "labor": 0,
+                "sentence": 10,
+                "note": "破壞任何金融設施並從中獲利"
+          },
+          {
+                "id": "5-002",
+                "code": "5-002",
+                "category": "搶劫、嚴重危害公共安全或走私相關",
+                "type": "重罪",
+                "name": "非法走私車輛",
+                "fine": 8000,
+                "prison": 15,
+                "labor": 0,
+                "sentence": 15,
+                "note": "轉運執法部門未登記在案之各類級車輛"
+          },
+          {
+                "id": "5-003",
+                "code": "5-003",
+                "category": "搶劫、嚴重危害公共安全或走私相關",
+                "type": "重罪",
+                "name": "協助不法組織進行非法行為",
+                "fine": 5000,
+                "prison": 15,
+                "labor": 0,
+                "sentence": 15,
+                "note": "協助買兇、非法運送毒品、運鈔車搶劫、ATM搶劫、偷車(任務板)"
+          },
+          {
+                "id": "5-004",
+                "code": "5-004",
+                "category": "搶劫、嚴重危害公共安全或走私相關",
+                "type": "重罪",
+                "name": "搶劫市民",
+                "fine": 3000,
+                "prison": 15,
+                "labor": 0,
+                "sentence": 15,
+                "note": "以任何武力等級之武器，強迫市民交出其財產"
+          },
+          {
+                "id": "5-005",
+                "code": "5-005",
+                "category": "搶劫、嚴重危害公共安全或走私相關",
+                "type": "重罪",
+                "name": "搶劫商店",
+                "fine": 10000,
+                "prison": 20,
+                "labor": 0,
+                "sentence": 20,
+                "note": "搶劫城市裡的任何商店以獲得不法之財"
+          },
+          {
+                "id": "5-006",
+                "code": "5-006",
+                "category": "搶劫、嚴重危害公共安全或走私相關",
+                "type": "重罪",
+                "name": "搶劫醫療物資",
+                "fine": 8000,
+                "prison": 20,
+                "labor": 0,
+                "sentence": 20,
+                "note": "搶劫軍隊的醫療物資"
+          },
+          {
+                "id": "5-007",
+                "code": "5-007",
+                "category": "搶劫、嚴重危害公共安全或走私相關",
+                "type": "重罪",
+                "name": "搶劫珠寶",
+                "fine": 15000,
+                "prison": 20,
+                "labor": 0,
+                "sentence": 20,
+                "note": "搶劫珠寶店以獲得不法之財"
+          },
+          {
+                "id": "5-008",
+                "code": "5-008",
+                "category": "搶劫、嚴重危害公共安全或走私相關",
+                "type": "重罪",
+                "name": "搶劫小銀行",
+                "fine": 20000,
+                "prison": 20,
+                "labor": 0,
+                "sentence": 20,
+                "note": "搶劫小銀行以獲得不法之財"
+          },
+          {
+                "id": "5-009",
+                "code": "5-009",
+                "category": "搶劫、嚴重危害公共安全或走私相關",
+                "type": "重罪",
+                "name": "搶劫太平洋銀行",
+                "fine": 30000,
+                "prison": 20,
+                "labor": 0,
+                "sentence": 20,
+                "note": "搶劫太平洋銀行以獲得不法之財"
+          },
+          {
+                "id": "5-010",
+                "code": "5-010",
+                "category": "搶劫、嚴重危害公共安全或走私相關",
+                "type": "重罪",
+                "name": "搶劫同謀",
+                "fine": 10000,
+                "prison": 20,
+                "labor": 0,
+                "sentence": 20,
+                "note": "搶劫建物案之同謀（協助者）"
+          },
+          {
+                "id": "5-011",
+                "code": "5-011",
+                "category": "搶劫、嚴重危害公共安全或走私相關",
+                "type": "重罪",
+                "name": "挾持交通工具",
+                "fine": 2000,
+                "prison": 20,
+                "labor": 0,
+                "sentence": 20,
+                "note": "以武力或脅迫手段控制或劫持任何交通工具（如巴士、計程車、船隻、飛機等），威脅駕駛人或乘客安全"
+          },
+          {
+                "id": "5-012",
+                "code": "5-012",
+                "category": "搶劫、嚴重危害公共安全或走私相關",
+                "type": "重罪",
+                "name": "非法武裝集會",
+                "fine": 3000,
+                "prison": 20,
+                "labor": 0,
+                "sentence": 20,
+                "note": "三人以上於公共場合攜帶武器聚集，造成市民恐慌或威脅公共安全"
+          },
+          {
+                "id": "5-013",
+                "code": "5-013",
+                "category": "搶劫、嚴重危害公共安全或走私相關",
+                "type": "輕罪",
+                "name": "非法收購贓物",
+                "fine": 2000,
+                "prison": 0,
+                "labor": 15,
+                "sentence": 15,
+                "note": "明知為非法來源財物，仍進行購買或交換"
+          },
+          {
+                "id": "5-014",
+                "code": "5-014",
+                "category": "搶劫、嚴重危害公共安全或走私相關",
+                "type": "重罪",
+                "name": "非法運送違禁品",
+                "fine": 5000,
+                "prison": 20,
+                "labor": 0,
+                "sentence": 20,
+                "note": "替他人運送毒品、黑錢、槍械或其他違禁品，雖未直接販售，仍屬犯罪行為"
+          },
+          {
+                "id": "5-015",
+                "code": "5-015",
+                "category": "搶劫、嚴重危害公共安全或走私相關",
+                "type": "重罪",
+                "name": "假冒公職人員",
+                "fine": 5000,
+                "prison": 20,
+                "labor": 0,
+                "sentence": 20,
+                "note": "冒充依法任命之公務員或執法人員身分，足以使他人誤信並行使其職權之行為"
+          },
+          {
+                "id": "5-016",
+                "code": "5-016",
+                "category": "搶劫、嚴重危害公共安全或走私相關",
+                "type": "重罪",
+                "name": "未經許可穿著公職人員制服",
+                "fine": 10000,
+                "prison": 20,
+                "labor": 0,
+                "sentence": 20,
+                "note": "未經合法授權而穿著、配戴公職人員之制服、徽章、識別證或相關標誌，足以使他人誤認其具該職務身分之行為"
+          },
+          {
+                "id": "4-001",
+                "code": "4-001",
+                "category": "動物相關",
+                "type": "輕罪",
+                "name": "虐待動物",
+                "fine": 800,
+                "prison": 0,
+                "labor": 10,
+                "sentence": 10,
+                "note": "人類對非人類動物蓄意或非蓄意施行使該動物承受痛苦或傷害的行為"
+          },
+          {
+                "id": "4-002",
+                "code": "4-002",
+                "category": "動物相關",
+                "type": "重罪",
+                "name": "虐待動物致其死亡",
+                "fine": 1600,
+                "prison": 10,
+                "labor": 0,
+                "sentence": 10,
+                "note": "人類對非人類動物蓄意或非蓄意施行使該動物死亡"
+          },
+          {
+                "id": "4-003",
+                "code": "4-003",
+                "category": "動物相關",
+                "type": "重罪",
+                "name": "持有保育類相關產物",
+                "fine": 1000,
+                "prison": 10,
+                "labor": 0,
+                "sentence": 10,
+                "note": "持有保育類動物相關產物，包括但不限於：食品、皮、肉、服飾、包包"
+          },
+          {
+                "id": "4-004",
+                "code": "4-004",
+                "category": "動物相關",
+                "type": "重罪",
+                "name": "持有保育類動物",
+                "fine": 1500,
+                "prison": 10,
+                "labor": 0,
+                "sentence": 10,
+                "note": "持有保育類動物本體"
+          },
+          {
+                "id": "4-005",
+                "code": "4-005",
+                "category": "動物相關",
+                "type": "重罪",
+                "name": "販賣保育類相關產物或本體",
+                "fine": 2000,
+                "prison": 15,
+                "labor": 0,
+                "sentence": 15,
+                "note": "販賣保育類動物相關產物或本體"
+          }
+    ];
+    let rules = loadRules();
+    let selected = [];
+    const COMMON_LAW_CODES = ['1-008', '1-009', '2-004', '2-026', '2-012', '3-006', '3-007', '3-008', '3-009', '3-011', '3-012', '3-016', '3-017', '5-001', '5-004', '5-005', '5-007'];
+    const DEFAULT_LAW_PACKAGES = [
+      { name: '搶劫超商', desc: '常見商店搶劫後載具逃逸、人質情境。', codes: ['1-008', '5-005', '2-004'] },
+      { name: '搶劫市民', desc: '路邊搶劫、徒步或載具逃逸情境。', codes: ['1-009', '5-004', '2-026'] },
+      { name: '搶劫珠寶', desc: '珠寶店案件搭配人質與載具逃逸。', codes: ['1-008', '5-007', '2-004'] },
+      { name: 'ATM / 金融設施', desc: '破壞金融設施並逃避警方。', codes: ['1-008', '5-001', '2-026'] },
+      { name: '販賣毒品', desc: '毒品販售、持有毒品與拒捕。', codes: ['1-009', '3-009', '3-011'] },
+      { name: '大量毒品', desc: '大量毒品持有、販售與運送。', codes: ['3-009', '3-012', '5-014'] },
+      { name: '黑錢交易', desc: '持有黑錢、非法物品與贓物。', codes: ['3-006', '3-008', '3-007'] },
+      { name: '非法槍械', desc: '持槍、使用槍械與未誠實告知。', codes: ['3-001', '3-016', '3-017'] }
+    ];
+    let lawPackages = loadLawPackages();
+    let commonCollapsed = true;
 
-        window.toggleLabels = () => {
-            const app = document.getElementById('app');
-            const icon = document.getElementById('icon-label-toggle');
-            isLabelsVisible = !isLabelsVisible;
-            if (isLabelsVisible) {
-                app.classList.add('show-labels');
-                icon.classList.replace('fa-eye-slash', 'fa-eye');
-            } else {
-                app.classList.remove('show-labels');
-                icon.classList.replace('fa-eye', 'fa-eye-slash');
-            }
-        };
-
-        window.toggleLanguage = () => {
-            currentLang = currentLang === 'zh-TW' ? 'en' : 'zh-TW';
-            updateUIi18n();
-        };
-
-        // ==========================================
-        // 5. 地圖與右鍵選單初始化 (Leaflet)
-        // ==========================================
-        function initMap() {
-            // 使用 L.CRS.Simple 平面座標系統
-            map = L.map('map', {
-                crs: L.CRS.Simple,
-                zoomControl: false,
-                minZoom: -4, 
-                maxZoom: 3,
-                zoomSnap: 0.1 // 開啟小數點層級的精細縮放
-            });
-
-            L.control.zoom({ position: 'bottomleft' }).addTo(map);
-
-            const imageUrl = 'https://r2.fivemanage.com/XbTfimN1V2ewbHyVypsMo/FiveMMapLayered_1.png';
-            
-            const img = new Image();
-            img.src = imageUrl;
-            img.onload = function() {
-                const w = img.width;
-                const h = img.height;
-                const bounds = [[0, 0], [h, w]];
-                
-                L.imageOverlay(imageUrl, bounds).addTo(map);
-                map.setMaxBounds(bounds);
-
-                const initialZoom = -2.3;
-                map.setView([h * 0.25, w * 0.5], initialZoom);
-            }
-
-            // 註冊右鍵選單事件 (Context Menu)
-            map.on('contextmenu', function(e) {
-                const menu = document.getElementById('context-menu');
-                // 將滑鼠點擊位置對齊選單
-                menu.style.left = e.originalEvent.clientX + 'px';
-                menu.style.top = e.originalEvent.clientY + 'px';
-                menu.style.display = 'block';
-                
-                // 儲存當下經緯度，供複製功能使用
-                contextMenuLocation = e.latlng;
-            });
-
-            // 點擊地圖其他地方時隱藏選單
-            map.on('click', hideContextMenu);
-            document.addEventListener('click', function(e) {
-                if (!e.target.closest('#context-menu')) {
-                    hideContextMenu();
-                }
-            });
-            
-            // 載入靜態地標
-            loadStaticMarkers();
-        }
-
-        // 隱藏右鍵選單
-        function hideContextMenu() {
-            document.getElementById('context-menu').style.display = 'none';
-        }
-
-        // 右鍵選單的複製功能：自動生成程式碼格式
-        window.copyMarkerCode = () => {
-            if (contextMenuLocation) {
-                const lat = contextMenuLocation.lat.toFixed(2);
-                const lng = contextMenuLocation.lng.toFixed(2);
-                const newId = 'marker-' + Date.now();
-                
-                // 產生提供給開發者直接貼上的代碼格式
-                const codeTemplate = `            {
-                id: '${newId}',
-                lat: ${lat},
-                lng: ${lng},
-                name: '新標記區域',
-                color: '#3b82f6',
-                radius: 100,
-                imageUrl: '',
-                desc: ''
-            },`;
-
-                // 嘗試寫入剪貼簿
-                if (navigator.clipboard && window.isSecureContext) {
-                    navigator.clipboard.writeText(codeTemplate).then(() => {
-                        showToast(t('msgCopySuccess'));
-                        hideContextMenu();
-                    }).catch(err => copyFallback(codeTemplate));
-                } else {
-                    copyFallback(codeTemplate);
-                }
-            }
-        };
-
-        // 剪貼簿備用方案 (針對部分非 HTTPS 環境)
-        function copyFallback(text) {
-            const textArea = document.createElement("textarea");
-            textArea.value = text;
-            textArea.style.position = "fixed"; 
-            document.body.appendChild(textArea);
-            textArea.focus();
-            textArea.select();
-            try {
-                document.execCommand('copy');
-                showToast(t('msgCopySuccess'));
-            } catch (err) {
-                console.error('Fallback: Oops, unable to copy', err);
-            }
-            document.body.removeChild(textArea);
-            hideContextMenu();
-        }
-
-        // ==========================================
-        // 6. 靜態資料讀取與地圖渲染邏輯
-        // ==========================================
-        
-        function loadStaticMarkers() {
-            staticMarkers.forEach(data => {
-                markersData[data.id] = data;
-                renderMarkerOnMap(data);
-            });
-            renderMarkerList();
-        }
-
-        function renderMarkerOnMap(data) {
-            if (mapLayers[data.id]) {
-                map.removeLayer(mapLayers[data.id]);
-            }
-
-            const customIcon = L.divIcon({
-                className: 'custom-div-icon',
-                html: `<div class="marker-dot" style="background-color: ${data.color}; width: 14px; height: 14px; border-radius: 50%; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.6); transition: opacity 0.2s, transform 0.2s;"></div>`,
-                iconSize: [14, 14],
-                iconAnchor: [7, 7]
-            });
-
-            const marker = L.marker([data.lat, data.lng], { icon: customIcon });
-            
-            marker.bindTooltip(data.name, {
-                permanent: true,
-                direction: 'top',
-                offset: [0, -10],
-                className: 'custom-tooltip'
-            });
-
-            let popupHtml = `<div class="flex flex-col w-full font-sans">`;
-            popupHtml += `
-                <div class="px-4 py-3 bg-[#1f2937] border-b border-gray-700 flex items-center gap-2 pr-8">
-                    <div class="w-3 h-3 flex-shrink-0 rounded-full" style="background-color: ${data.color}; box-shadow: 0 0 5px ${data.color}; border: 1px solid rgba(255,255,255,0.5);"></div>
-                    <strong class="text-base text-white m-0 truncate">${data.name}</strong>
-                </div>
-            `;
-            
-            if (data.imageUrl) {
-                popupHtml += `
-                    <div class="w-full aspect-video bg-black relative">
-                        <img src="${data.imageUrl}" alt="${data.name}" class="w-full h-full object-cover absolute inset-0" onerror="this.parentElement.style.display='none'">
-                    </div>
-                `;
-            }
-            
-            if (data.desc) {
-                popupHtml += `<div class="p-4 text-sm text-gray-200 whitespace-pre-wrap leading-relaxed">${data.desc}</div>`;
-            } else if (!data.imageUrl) {
-                popupHtml += `<div class="p-4 text-sm text-gray-500 italic">${t('noDesc')}</div>`;
-            }
-
-            popupHtml += `</div>`;
-            
-            marker.bindPopup(popupHtml, { className: 'custom-popup', maxWidth: 400 });
-
-            const circle = L.circle([data.lat, data.lng], {
-                color: data.color,      
-                fillColor: data.color,  
-                fillOpacity: 0,       
-                opacity: 0,
-                radius: data.radius,
-                interactive: false
-            });
-
-            marker.on('mouseover', (e) => {
-                circle.setStyle({ fillOpacity: 0.2, opacity: 0.6 });
-                const el = e.target.getElement();
-                if (el) {
-                    const dot = el.querySelector('.marker-dot');
-                    if (dot) {
-                        dot.style.opacity = '0'; 
-                        dot.style.transform = 'scale(0.5)';
-                    }
-                }
-                const tooltip = e.target.getTooltip();
-                if (tooltip && tooltip._container) {
-                    tooltip._container.classList.add('force-show');
-                }
-            });
-
-            marker.on('mouseout', (e) => {
-                circle.setStyle({ fillOpacity: 0, opacity: 0 });
-                const el = e.target.getElement();
-                if (el) {
-                    const dot = el.querySelector('.marker-dot');
-                    if (dot) {
-                        dot.style.opacity = '1';
-                        dot.style.transform = 'scale(1)';
-                    }
-                }
-                const tooltip = e.target.getTooltip();
-                if (tooltip && tooltip._container) {
-                    tooltip._container.classList.remove('force-show');
-                }
-            });
-
-            const layerGroup = L.layerGroup([circle, marker]);
-            layerGroup.addTo(map);
-
-            mapLayers[data.id] = layerGroup;
-        }
-
-        window.flyToMarker = (id) => {
-            const data = markersData[id];
-            if (data) {
-                map.flyTo([data.lat, data.lng], 1, { duration: 1.5 });
-                if (window.innerWidth < 768) toggleSidebar();
-            }
-        };
-
-        function renderMarkerList() {
-            const container = document.getElementById('marker-list-container');
-            container.innerHTML = ''; 
-
-            const sortedMarkers = Object.values(markersData);
-
-            sortedMarkers.forEach(item => {
-                const el = document.createElement('div');
-                // 將列表項目背景設計得符合 #111827 側邊欄風格 (使用 Tailwind gray-800 等級)
-                el.className = 'bg-[#1f2937] p-3 rounded-lg border border-gray-700 hover:border-accent transition-colors flex flex-col gap-2 cursor-pointer';
-                el.onclick = () => flyToMarker(item.id);
-                
-                const infoDiv = document.createElement('div');
-                infoDiv.className = 'flex items-center gap-3';
-                
-                const colorBox = `<div class="w-4 h-4 rounded-full flex-shrink-0" style="background-color: ${item.color}; box-shadow: 0 0 4px ${item.color}; border: 1px solid rgba(255,255,255,0.5);"></div>`;
-                
-                infoDiv.innerHTML = `
-                    ${colorBox}
-                    <div class="flex-1 overflow-hidden">
-                        <h4 class="font-bold text-white truncate">${item.name}</h4>
-                        <p class="text-xs text-gray-400 truncate">R: ${item.radius}m</p>
-                    </div>
-                `;
-                el.appendChild(infoDiv);
-                container.appendChild(el);
-            });
-        }
-
-        // ==========================================
-        // 7. 程式啟動點
-        // ==========================================
-        window.onload = () => {
-            initMap();
-            updateUIi18n();
-        };
-
-    </script>
+    function loadRules() {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored) {
+        try { return JSON.parse(stored); } catch (_) {}
+      }
+      return DEFAULT_RULES.map(rule => ({ ...rule }));
+    }
+    function saveRules() { localStorage.setItem(STORAGE_KEY, JSON.stringify(rules)); }
+    function loadLawPackages() {
+      const stored = localStorage.getItem(PACKAGE_STORAGE_KEY);
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed)) return parsed;
+        } catch (_) {}
+      }
+      return DEFAULT_LAW_PACKAGES.map(pack => ({ ...pack, codes: [...pack.codes] }));
+    }
+    function saveLawPackages() { localStorage.setItem(PACKAGE_STORAGE_KEY, JSON.stringify(lawPackages)); }
+    function money(n) { return '$' + Number(n || 0).toLocaleString('en-US'); }
+    function num(id) { return Number(document.getElementById(id).value || 0); }
+    function typeClass(type) {
+      if (type === '重罪') return 'felony';
+      if (type === '輕罪') return 'misdemeanor';
+      return 'violation';
+    }
+    function typeBadge(type) {
+      return `<span class="type-badge ${typeClass(type)}">${type}</span>`;
+    }
+    function isSpecialListed() {
+      return Boolean(document.getElementById('specialListToggle')?.checked);
+    }
+    function ticketLimit() {
+      return isSpecialListed() ? 6 : 3;
+    }
+    function updateTicketLimitNote() {
+      const note = document.getElementById('ticketLimitNote');
+      if (!note) return;
+      const limit = ticketLimit();
+      note.innerHTML = `${isSpecialListed() ? '特殊名單' : '一般犯人'}目前最多可開 <strong>${limit}</strong> 張罰單；已選 <strong>${selected.length}</strong> 張。`;
+    }
+    function toast(msg) {
+      const el = document.getElementById('toast');
+      el.textContent = msg;
+      el.classList.add('show');
+      setTimeout(() => el.classList.remove('show'), 1700);
+    }
+    function copyText(text) {
+      const area = document.createElement('textarea');
+      area.value = text;
+      document.body.appendChild(area);
+      area.select();
+      document.execCommand('copy');
+      area.remove();
+      toast('已複製');
+    }
+    function renderPicker() {
+      const keyword = document.getElementById('crimeSearch').value.trim().toLowerCase();
+      const grouped = {};
+      const limit = ticketLimit();
+      const matchesKeyword = (r) => !keyword || r.name.toLowerCase().includes(keyword) || r.category.toLowerCase().includes(keyword) || String(r.code || '').toLowerCase().includes(keyword);
+      const renderOffense = (item) => `
+            <div class="offense">
+              <div>
+                <strong>${item.code || ''} ${item.name}</strong>
+                <small>${typeBadge(item.type)}<span class="metric">${money(item.fine)}</span><span class="metric">${item.prison ? item.prison + ' 月' : '-'}</span><span class="metric">${item.labor ? item.labor + ' 次' : '-'}</span></small>
+                ${item.note ? `<div class="note-line">${item.note}</div>` : ''}
+              </div>
+              <button data-add="${item.id}" ${selected.some(s => s.id === item.id) || selected.length >= limit ? 'disabled' : ''}>加入</button>
+            </div>`;
+      const renderCategory = (cat, items) => `
+        <div class="category">
+          <h3>${cat} <span class="hint">共 ${items.length} 項</span></h3>
+          ${items.map(renderOffense).join('')}
+        </div>`;
+      const commonItems = rules.filter(r => COMMON_LAW_CODES.includes(r.code || r.id) && matchesKeyword(r));
+      rules.filter(matchesKeyword).forEach(r => { (grouped[r.category] ||= []).push(r); });
+      const commonHtml = commonItems.length ? `
+        <div class="category common-laws ${commonCollapsed ? 'collapsed' : ''}">
+          <h3><span>常用法條 <span class="hint">共 ${commonItems.length} 項</span></span><button class="collapse-btn" data-toggle-common="1">${commonCollapsed ? '展開' : '收合'}</button></h3>
+          <div class="common-list">${commonItems.map(renderOffense).join('')}</div>
+        </div>` : '';
+      const groupedHtml = Object.entries(grouped).map(([cat, items]) => renderCategory(cat, items)).join('');
+      document.getElementById('lawPicker').innerHTML = commonHtml + (groupedHtml || '<div class="hint">找不到符合的罪名</div>');
+      document.querySelectorAll('[data-add]').forEach(btn => btn.addEventListener('click', () => addRule(btn.dataset.add)));
+      document.querySelectorAll('[data-toggle-common]').forEach(btn => btn.addEventListener('click', () => { commonCollapsed = !commonCollapsed; renderPicker(); }));
+    }
+    function calculateVerdictTotals() {
+      const raw = selected.reduce((a, r) => {
+        a.fine += Number(r.fine || 0);
+        a.prison += Number(r.prison || 0);
+        a.labor += Number(r.labor || 0);
+        return a;
+      }, { fine: num('extraFine'), prison: 0, labor: 0 });
+      const hasFelony = selected.some(r => r.type === '重罪');
+      const hasMisdemeanor = selected.some(r => r.type === '輕罪');
+      const mergedLaborIntoPrison = hasFelony && hasMisdemeanor && raw.labor > 0;
+      const sentenceBase = {
+        fine: raw.fine,
+        prison: mergedLaborIntoPrison ? raw.prison + raw.labor : raw.prison,
+        labor: mergedLaborIntoPrison ? 0 : raw.labor
+      };
+      const multiplier = Math.max(0, 100 - Math.min(100, num('discount'))) / 100;
+      return {
+        raw,
+        mergedLaborIntoPrison,
+        fine: Math.round(sentenceBase.fine * multiplier),
+        prison: Math.round(sentenceBase.prison * multiplier),
+        labor: Math.round(sentenceBase.labor * multiplier)
+      };
+    }
+    function renderSelected() {
+      const totals = calculateVerdictTotals();
+      document.getElementById('totalFine').textContent = money(totals.fine);
+      document.getElementById('totalPrison').textContent = totals.prison;
+      document.getElementById('totalLabor').textContent = totals.labor;
+      document.getElementById('totalCount').textContent = selected.length;
+      updateTicketLimitNote();
+      document.getElementById('selectedList').innerHTML = selected.length ? selected.map((r, i) => `
+        <div class="selected">
+          <div>
+            <strong>${i + 1}. ${r.code || ''} ${r.name}</strong>
+            <div class="hint">${typeBadge(r.type)} ${money(r.fine)} / ${r.prison ? r.prison + ' 月' : '-'} / ${r.labor ? r.labor + ' 次' : '-'}</div>
+            ${r.note ? `<div class="note-line">${r.note}</div>` : ''}
+          </div>
+          <button class="danger" data-remove="${r.id}">移除</button>
+        </div>`).join('') + (totals.mergedLaborIntoPrison ? '<div class="hint" style="margin-top:10px;color:#ff9d2e">已套用重罪併輕罪規則：公共服務次數併入監禁總刑期。</div>' : '') : '尚未輸入任何罪名';
+      document.querySelectorAll('[data-remove]').forEach(btn => btn.addEventListener('click', () => removeRule(btn.dataset.remove)));
+      renderPackageSummary(totals);
+      return totals;
+    }
+    function renderPackageSummary(totals = calculateVerdictTotals()) {
+      const fineEl = document.getElementById('packageTotalFine');
+      if (!fineEl) return;
+      document.getElementById('packageDiscount').value = document.getElementById('discount').value;
+      document.getElementById('packageExtraFine').value = document.getElementById('extraFine').value;
+      fineEl.textContent = money(totals.fine);
+      document.getElementById('packageTotalPrison').textContent = totals.prison;
+      document.getElementById('packageTotalLabor').textContent = totals.labor;
+      document.getElementById('packageTotalCount').textContent = selected.length;
+      document.getElementById('packageSelectedList').innerHTML = selected.length ? selected.map((r, i) => `
+        <div class="selected">
+          <div>
+            <strong>${i + 1}. ${r.code || ''} ${r.name}</strong>
+            <div class="hint">${typeBadge(r.type)} ${money(r.fine)} / ${r.prison ? r.prison + ' 月' : '-'} / ${r.labor ? r.labor + ' 次' : '-'}</div>
+          </div>
+          <button class="danger" data-remove="${r.id}">移除</button>
+        </div>`).join('') + (totals.mergedLaborIntoPrison ? '<div class="hint" style="margin-top:10px;color:#ff9d2e">已套用重罪併輕罪規則：公共服務次數併入監禁總刑期。</div>' : '') : '尚未套用任何法條套裝';
+      document.querySelectorAll('#packageSelectedList [data-remove]').forEach(btn => btn.addEventListener('click', () => removeRule(btn.dataset.remove)));
+    }
+    function renderPackages() {
+      const grid = document.getElementById('packageGrid');
+      if (!grid) return;
+      grid.innerHTML = lawPackages.map((pack, index) => {
+        const laws = pack.codes.map(code => rules.find(r => (r.code || r.id) === code)).filter(Boolean);
+        const missing = pack.codes.filter(code => !laws.some(r => (r.code || r.id) === code));
+        return `
+          <div class="package-card">
+            <h3>${pack.name}</h3>
+            <p>${pack.desc}</p>
+            <div class="package-laws">
+              ${laws.map(rule => `<div class="package-law"><code>${rule.code}</code><span>${rule.name}</span>${typeBadge(rule.type)}</div>`).join('')}
+              ${missing.map(code => `<div class="package-law"><code>${code}</code><span>找不到法條</span></div>`).join('')}
+            </div>
+            <div class="package-actions"><button class="primary" data-add-package="${index}">套用套裝</button></div>
+          </div>`;
+      }).join('');
+      document.querySelectorAll('[data-add-package]').forEach(btn => btn.addEventListener('click', () => addLawPackage(Number(btn.dataset.addPackage))));
+    }
+    function addLawPackage(index) {
+      const pack = lawPackages[index];
+      if (!pack) return;
+      const laws = pack.codes.map(code => rules.find(r => (r.code || r.id) === code)).filter(Boolean);
+      const toAdd = laws.filter(rule => !selected.some(s => s.id === rule.id));
+      if (!toAdd.length) return toast('此套裝法條已在判決內');
+      const limit = ticketLimit();
+      if (selected.length + toAdd.length > limit) return toast(`套裝會超過 ${limit} 張罰單上限，請先清空或勾選特殊名單`);
+      selected.push(...toAdd.map(rule => ({ ...rule })));
+      toast(`已套用：${pack.name}`);
+      renderAll();
+    }
+    function renderPackageEditor() {
+      const editor = document.getElementById('packageEditor');
+      if (!editor) return;
+      editor.innerHTML = lawPackages.map((pack, index) => `
+        <div class="package-edit-card">
+          <div>
+            <label>套裝名稱</label>
+            <input data-package-field="name" data-package-index="${index}" value="${pack.name || ''}" placeholder="例：搶劫超商" />
+          </div>
+          <div>
+            <label>說明</label>
+            <input data-package-field="desc" data-package-index="${index}" value="${pack.desc || ''}" placeholder="簡短描述使用情境" />
+          </div>
+          <div>
+            <label>法條編號</label>
+            <div class="package-code-row">
+              <input data-package-code="0" data-package-index="${index}" value="${pack.codes?.[0] || ''}" placeholder="1-008" />
+              <input data-package-code="1" data-package-index="${index}" value="${pack.codes?.[1] || ''}" placeholder="5-005" />
+              <input data-package-code="2" data-package-index="${index}" value="${pack.codes?.[2] || ''}" placeholder="2-004" />
+            </div>
+          </div>
+          <button class="danger" data-delete-package="${index}">刪除</button>
+        </div>`).join('') || '<div class="hint">尚未設定法條套裝。</div>';
+      editor.querySelectorAll('[data-package-field]').forEach(input => input.addEventListener('change', () => {
+        const index = Number(input.dataset.packageIndex);
+        lawPackages[index][input.dataset.packageField] = input.value.trim();
+        saveLawPackages();
+        renderPackages();
+      }));
+      editor.querySelectorAll('[data-package-code]').forEach(input => input.addEventListener('change', () => {
+        const index = Number(input.dataset.packageIndex);
+        const codeIndex = Number(input.dataset.packageCode);
+        lawPackages[index].codes ||= [];
+        lawPackages[index].codes[codeIndex] = input.value.trim();
+        lawPackages[index].codes = lawPackages[index].codes.filter(Boolean).slice(0, 3);
+        saveLawPackages();
+        renderAll();
+      }));
+      editor.querySelectorAll('[data-delete-package]').forEach(btn => btn.addEventListener('click', () => {
+        lawPackages.splice(Number(btn.dataset.deletePackage), 1);
+        saveLawPackages();
+        renderAll();
+      }));
+    }
+    function addRule(id) {
+      const rule = rules.find(r => r.id === id);
+      if (!rule || selected.some(s => s.id === id)) return;
+      const limit = ticketLimit();
+      if (selected.length >= limit) return toast(isSpecialListed() ? '特殊名單最多選擇 6 項罪名' : '一般犯人最多選擇 3 項罪名');
+      selected.push({ ...rule });
+      renderAll();
+    }
+    function removeRule(id) {
+      selected = selected.filter(r => r.id !== id);
+      renderAll();
+    }
+    function verdictText() {
+      const totals = renderSelected();
+      const lines = selected.map((r, i) => `${i + 1}. ${r.code || ''} ${r.name} [${r.type}] (${money(r.fine)} / ${r.prison}月 / ${r.labor}次)${r.note ? `\n   備註：${r.note}` : ''}`);
+      if (num('extraFine') > 0) lines.push(`手動加罰金：${money(num('extraFine'))}`);
+      const mergeNote = totals.mergedLaborIntoPrison ? '\n計算規則：同時有輕罪與重罪，公共服務次數已併入監禁總刑期。' : '';
+      return `【判決摘要】\n特殊名單：${isSpecialListed() ? '是' : '否'}（罰單上限 ${ticketLimit()} 張）\n${lines.join('\n') || '尚未選擇罪名'}\n\n總罰金：${money(totals.fine)}\n總刑期：${totals.prison} 月\n公共服務：${totals.labor} 次${mergeNote}${num('discount') ? `\n折扣/減刑：${num('discount')}%` : ''}`;
+    }
+    function renderTable() {
+      document.getElementById('rulesTable').innerHTML = rules.map((r, i) => `
+        <tr>
+          <td>${r.code || r.id}</td>
+          <td><span class="pill">${r.category}</span></td>
+          <td>${r.name}</td>
+          <td><div style="margin-bottom:6px">${typeBadge(r.type)}</div><select data-field="type" data-i="${i}"><option value="違規" ${r.type === '違規' ? 'selected' : ''}>違規</option><option value="輕罪" ${r.type === '輕罪' ? 'selected' : ''}>輕罪</option><option value="重罪" ${r.type === '重罪' ? 'selected' : ''}>重罪</option></select></td>
+          <td><input type="number" min="0" data-field="fine" data-i="${i}" value="${r.fine}"></td>
+          <td><input type="number" min="0" data-field="prison" data-i="${i}" value="${r.prison}"></td>
+          <td><input type="number" min="0" data-field="labor" data-i="${i}" value="${r.labor}"></td>
+          <td><textarea data-field="note" data-i="${i}" style="min-height:64px">${r.note || ''}</textarea></td>
+        </tr>`).join('');
+      document.querySelectorAll('#rulesTable input, #rulesTable select, #rulesTable textarea').forEach(input => {
+        input.addEventListener('change', () => {
+          const i = Number(input.dataset.i);
+          const field = input.dataset.field;
+          rules[i][field] = (field === 'note' || field === 'type') ? input.value : Number(input.value || 0);
+          if (field === 'type' || field === 'prison' || field === 'labor') {
+            const sentence = field === 'type' ? (rules[i].type === '重罪' ? Number(rules[i].prison || rules[i].sentence || rules[i].labor || 0) : Number(rules[i].labor || rules[i].sentence || rules[i].prison || 0)) : Number(input.value || 0);
+            rules[i].sentence = sentence;
+            if (rules[i].type === '重罪') { rules[i].prison = sentence; rules[i].labor = 0; }
+            else { rules[i].prison = 0; rules[i].labor = sentence; }
+          }
+          selected = selected.map(s => s.id === rules[i].id ? { ...rules[i] } : s);
+          saveRules();
+          renderAll();
+        });
+      });
+    }
+    function generateReport() {
+      const now = new Date();
+      const caseNo = document.getElementById('caseNo').value || `LSPD-${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}-${String(now.getHours()).padStart(2,'0')}${String(now.getMinutes()).padStart(2,'0')}`;
+      const caseTime = document.getElementById('caseTime').value || now.toLocaleString('zh-TW');
+      const text = `【LSPD 案件報告】\n案件編號：${caseNo}\n發生時間：${caseTime}\n地點：${document.getElementById('casePlace').value || '未填寫'}\n\n相關人物\n嫌疑人：${document.getElementById('suspect').value || '未填寫'}\n被害人：${document.getElementById('victim').value || '無'}\n證人：${document.getElementById('witness').value || '無'}\n\n涉犯法條\n${selected.map((r, i) => `${i + 1}. ${r.name}`).join('\n') || '尚未從判刑計算器選擇罪名'}\n\n判決內容\n${verdictText()}\n\n案件經過\n${document.getElementById('caseSummary').value || '未填寫'}\n\n警方處理過程\n${document.getElementById('policeAction').value || '未填寫'}\n\n後續事項\n是否需要後續偵辦：${document.getElementById('followUp').value || '否'}\n是否轉交其他單位：${document.getElementById('handoff').value || '否'}\n主辦警員：${document.getElementById('officer').value || '未填寫'}`;
+      document.getElementById('reportOutput').textContent = text;
+    }
+    function dutyNoteText() {
+      const now = new Date().toLocaleString('zh-TW');
+      return `【勤務紀錄】\n時間：${now}\n勤務類型：${document.getElementById('dutyType').value || '未填寫'}\n位置：${document.getElementById('dutyPlace').value || '未填寫'}\n內容：${document.getElementById('dutyContent').value || '未填寫'}`;
+    }
+    function fillReportFromCalc() {
+      const current = document.getElementById('caseSummary').value.trim();
+      const addition = `涉犯法條與判決：\n${verdictText()}`;
+      document.getElementById('caseSummary').value = current ? `${current}\n\n${addition}` : addition;
+      toast('已帶入案件報告');
+    }
+    function renderAll() {
+      renderPicker();
+      renderSelected();
+      renderTable();
+      renderPackages();
+      renderPackageEditor();
+    }
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+        tab.classList.add('active');
+        document.getElementById(tab.dataset.tab).classList.add('active');
+      });
+    });
+    document.getElementById('crimeSearch').addEventListener('input', renderPicker);
+    document.getElementById('specialListToggle').addEventListener('change', () => {
+      const limit = ticketLimit();
+      if (selected.length > limit) {
+        selected = selected.slice(0, limit);
+        toast(`已切回一般限制，保留前 ${limit} 張罰單`);
+      }
+      renderAll();
+    });
+    document.getElementById('discount').addEventListener('input', renderSelected);
+    document.getElementById('extraFine').addEventListener('input', renderSelected);
+    document.getElementById('clearSelected').addEventListener('click', () => { selected = []; document.getElementById('extraFine').value = 0; renderAll(); });
+    document.getElementById('copyVerdict').addEventListener('click', () => copyText(verdictText()));
+    document.getElementById('generateReport').addEventListener('click', generateReport);
+    document.getElementById('copyReport').addEventListener('click', () => copyText(document.getElementById('reportOutput').textContent));
+    document.getElementById('exportRules').addEventListener('click', () => copyText(JSON.stringify({ rules, lawPackages }, null, 2)));
+    document.getElementById('copyPackageVerdict').addEventListener('click', () => copyText(verdictText()));
+    document.getElementById('clearSelectedFromPackages').addEventListener('click', () => { selected = []; renderAll(); });
+    document.getElementById('packageDiscount').addEventListener('input', (e) => { document.getElementById('discount').value = e.target.value; renderSelected(); });
+    document.getElementById('packageExtraFine').addEventListener('input', (e) => { document.getElementById('extraFine').value = e.target.value; renderSelected(); });
+    document.getElementById('addLawPackage').addEventListener('click', () => {
+      lawPackages.push({ name: '新增套裝', desc: '', codes: ['', '', ''] });
+      saveLawPackages();
+      renderAll();
+    });
+    document.getElementById('resetRules').addEventListener('click', () => {
+      if (!confirm('確定要還原預設法條資料？')) return;
+      localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem(PACKAGE_STORAGE_KEY);
+      rules = loadRules();
+      lawPackages = loadLawPackages();
+      selected = [];
+      renderAll();
+    });
+    document.getElementById('mapFrame').src = ['file:///C:/Users/haru2/Down', 'loads/police_', 'map/index.html'].join('');
+    renderAll();
+  </script>
 </body>
 </html>
