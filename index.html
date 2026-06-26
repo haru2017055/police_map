@@ -129,6 +129,7 @@
     .common-list { display: grid; grid-template-columns: repeat(2, minmax(360px, 1fr)); }
     .collapse-btn { width: auto; padding: 6px 10px; border-color: rgba(255,157,46,.45); color: #ffd08a; font-size: 12px; }
     .category.collapsed .common-list { display: none; }
+    .category.collapsed .package-panel-body { display: none; }
     .offense { display: grid; grid-template-columns: minmax(0, 1fr) 56px; gap: 12px; align-items: center; min-height: 92px; padding: 13px 14px; border-top: 1px solid rgba(0, 124, 196, .18); }
     .offense > div { min-width: 0; }
     .offense strong { display: block; overflow-wrap: anywhere; line-height: 1.35; }
@@ -164,6 +165,10 @@
     .quick-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
     .package-layout { display: grid; grid-template-columns: minmax(0, 1fr) 430px; gap: 18px; align-items: start; }
     .package-grid { display: grid; grid-template-columns: repeat(2, minmax(360px, 1fr)); gap: 14px; }
+    .package-panel-body { padding: 14px; }
+    .package-panel-tools { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 12px; }
+    .package-panel-tools .hint { flex: 1; }
+    .panel-body > .category .package-grid { grid-template-columns: repeat(2, minmax(300px, 1fr)); }
     .package-card { border: 1px solid rgba(0, 124, 196, .42); border-radius: 8px; padding: 14px; background: linear-gradient(180deg, rgba(7,28,49,.86), rgba(4,15,27,.92)); box-shadow: inset 0 1px rgba(255,255,255,.04); }
     .package-card h3 { margin: 0 0 8px; color: var(--cyan); font-size: 16px; }
     .package-card p { margin: 0 0 10px; color: var(--muted); font-size: 12px; line-height: 1.5; }
@@ -221,7 +226,6 @@
       <button class="tab active" data-tab="calc">判刑計算器</button>
       <button class="tab" data-tab="laws">法律資料庫</button>
       <button class="tab" data-tab="report">案件報告</button>
-      <button class="tab" data-tab="tools">法條套裝</button>
       <button class="tab" data-tab="map">警用地圖</button>
     </nav>
   </div>
@@ -242,6 +246,16 @@
               <div class="special-control">
                 <label><input id="specialListToggle" type="checkbox" /> 犯人有在特殊名單上</label>
                 <div class="limit-note" id="ticketLimitNote">一般犯人最多可開 <strong>3</strong> 張罰單；勾選特殊名單後最多 <strong>6</strong> 張。</div>
+              </div>
+              <div id="packagePicker" class="category common-laws collapsed" style="margin-bottom:14px">
+                <h3><span>法條套裝 <span class="hint">快速套用</span></span><button class="collapse-btn" id="togglePackages" type="button">展開</button></h3>
+                <div class="package-panel-body">
+                  <div class="package-panel-tools">
+                    <div class="hint">套裝會一次加入常見法條，仍會遵守一般 3 張、特殊名單 6 張的罰單上限。</div>
+                    <button class="danger" id="clearSelectedFromPackages" type="button">清空已選</button>
+                  </div>
+                  <div id="packageGrid" class="package-grid"></div>
+                </div>
               </div>
               <div id="lawPicker" class="law-grid"></div>
             </div>
@@ -355,52 +369,13 @@
       </div>
     </section>
 
-    <section id="tools" class="view">
-      <div class="package-layout">
-        <div class="panel">
-          <div class="panel-title">
-            <span>法條套裝</span>
-            <button class="danger" id="clearSelectedFromPackages">清空已選</button>
-          </div>
-          <div class="panel-body">
-            <div class="hint" style="margin-bottom:14px">套裝會一次加入常見三條法條，仍會遵守一般 3 張、特殊名單 6 張的罰單上限。</div>
-            <div id="packageGrid" class="package-grid"></div>
-          </div>
-        </div>
-        <aside class="panel">
-          <div class="panel-title">
-            <span>套裝計算機</span>
-            <button class="good" id="copyPackageVerdict">複製判決</button>
-          </div>
-          <div class="panel-body">
-            <div class="grid grid-2" style="margin-bottom:14px">
-              <div>
-                <label>折扣 / 減刑 (%)</label>
-                <input id="packageDiscount" type="number" min="0" max="100" value="0" />
-              </div>
-              <div>
-                <label>手動加罰金 ($)</label>
-                <input id="packageExtraFine" type="number" min="0" value="0" />
-              </div>
-            </div>
-            <div class="cards" style="margin-bottom:14px">
-              <div class="stat"><span>總罰金</span><b id="packageTotalFine">$0</b><span>NTD</span></div>
-              <div class="stat"><span>總刑期</span><b id="packageTotalPrison">0</b><span>月</span></div>
-              <div class="stat"><span>公共服務</span><b id="packageTotalLabor">0</b><span>次</span></div>
-              <div class="stat"><span>罪名計數</span><b id="packageTotalCount">0</b><span>項</span></div>
-            </div>
-            <div class="package-summary-list" id="packageSelectedList">尚未套用任何法條套裝</div>
-          </div>
-        </aside>
-      </div>
-    </section>
   </main>
 
   <div class="toast" id="toast"></div>
 
   <script>
     const STORAGE_KEY = 'mochirp-lspd-mdt-rules-v1-lawdoc';
-    const PACKAGE_STORAGE_KEY = 'mochirp-lspd-mdt-law-packages-v1';
+    const PACKAGE_STORAGE_KEY = 'mochirp-lspd-mdt-law-packages-v2';
     const DEFAULT_RULES = [
           {
                 "id": "1-001",
@@ -1444,10 +1419,10 @@
       { name: '搶劫珠寶', desc: '珠寶店案件搭配人質與載具逃逸。', codes: ['5-007', '2-004', '1-008'] },
       { name: 'ATM / 金融設施', desc: '破壞金融設施並逃避警方。', codes: ['5-001', '1-008'] },
       { name: '販賣毒品', desc: '毒品販售、載具拒捕與黑錢或非法物品。', codes: ['3-009', '1-008', '3-008'] },
-      { name: '黑錢交易', desc: '持有黑錢、非法物品與贓物。', codes: ['3-006', '3-008', '3-007'] },
     ];
     let lawPackages = loadLawPackages();
     let commonCollapsed = true;
+    let packageCollapsed = true;
 
     function loadRules() {
       const stored = localStorage.getItem(STORAGE_KEY);
@@ -1577,27 +1552,14 @@
           <button class="danger" data-remove="${r.id}">移除</button>
         </div>`).join('') + (totals.mergedLaborIntoPrison ? '<div class="hint" style="margin-top:10px;color:#ff9d2e">已套用重罪併輕罪規則：公共服務次數併入監禁總刑期。</div>' : '') : '尚未輸入任何罪名';
       document.querySelectorAll('[data-remove]').forEach(btn => btn.addEventListener('click', () => removeRule(btn.dataset.remove)));
-      renderPackageSummary(totals);
       return totals;
     }
-    function renderPackageSummary(totals = calculateVerdictTotals()) {
-      const fineEl = document.getElementById('packageTotalFine');
-      if (!fineEl) return;
-      document.getElementById('packageDiscount').value = document.getElementById('discount').value;
-      document.getElementById('packageExtraFine').value = document.getElementById('extraFine').value;
-      fineEl.textContent = money(totals.fine);
-      document.getElementById('packageTotalPrison').textContent = totals.prison;
-      document.getElementById('packageTotalLabor').textContent = totals.labor;
-      document.getElementById('packageTotalCount').textContent = selected.length;
-      document.getElementById('packageSelectedList').innerHTML = selected.length ? selected.map((r, i) => `
-        <div class="selected">
-          <div>
-            <strong>${i + 1}. ${r.code || ''} ${r.name}</strong>
-            <div class="hint">${typeBadge(r.type)} ${money(r.fine)} / ${r.prison ? r.prison + ' 月' : '-'} / ${r.labor ? r.labor + ' 次' : '-'}</div>
-          </div>
-          <button class="danger" data-remove="${r.id}">移除</button>
-        </div>`).join('') + (totals.mergedLaborIntoPrison ? '<div class="hint" style="margin-top:10px;color:#ff9d2e">已套用重罪併輕罪規則：公共服務次數併入監禁總刑期。</div>' : '') : '尚未套用任何法條套裝';
-      document.querySelectorAll('#packageSelectedList [data-remove]').forEach(btn => btn.addEventListener('click', () => removeRule(btn.dataset.remove)));
+    function renderPackageToggle() {
+      const panel = document.getElementById('packagePicker');
+      const btn = document.getElementById('togglePackages');
+      if (!panel || !btn) return;
+      panel.classList.toggle('collapsed', packageCollapsed);
+      btn.textContent = packageCollapsed ? '展開' : '收合';
     }
     function renderPackages() {
       const grid = document.getElementById('packageGrid');
@@ -1744,6 +1706,7 @@
       renderSelected();
       renderTable();
       renderPackages();
+      renderPackageToggle();
       renderPackageEditor();
     }
     let embeddedMap = null;
@@ -1800,10 +1763,8 @@
     document.getElementById('generateReport').addEventListener('click', generateReport);
     document.getElementById('copyReport').addEventListener('click', () => copyText(document.getElementById('reportOutput').textContent));
     document.getElementById('exportRules').addEventListener('click', () => copyText(JSON.stringify({ rules, lawPackages }, null, 2)));
-    document.getElementById('copyPackageVerdict').addEventListener('click', () => copyText(verdictText()));
+    document.getElementById('togglePackages').addEventListener('click', () => { packageCollapsed = !packageCollapsed; renderPackageToggle(); });
     document.getElementById('clearSelectedFromPackages').addEventListener('click', () => { selected = []; renderAll(); });
-    document.getElementById('packageDiscount').addEventListener('input', (e) => { document.getElementById('discount').value = e.target.value; renderSelected(); });
-    document.getElementById('packageExtraFine').addEventListener('input', (e) => { document.getElementById('extraFine').value = e.target.value; renderSelected(); });
     document.getElementById('addLawPackage').addEventListener('click', () => {
       lawPackages.push({ name: '新增套裝', desc: '', codes: ['', '', ''] });
       saveLawPackages();
