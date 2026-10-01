@@ -197,6 +197,13 @@
       line-height: 1.35; text-align: center; text-shadow: 0 1px 3px #000;
     }
     .map-popup strong { color: #ffffff; }
+    .law-reference details { border: 1px solid var(--line); border-radius: 7px; padding: 12px 14px; margin-bottom: 12px; }
+    .law-reference summary { cursor: pointer; color: var(--cyan); font-weight: 700; }
+    .law-reference dl { margin-bottom: 0; }
+    .law-reference dt { font-weight: 700; margin-top: 12px; }
+    .law-reference dd { margin: 5px 0 0; color: #9bc7e9; line-height: 1.65; }
+    .penalty-select { margin-top: 8px; }
+    .penalty-select select { margin-top: 4px; font-size: 12px; }
     .toast {
       position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%) translateY(18px);
       opacity: 0; pointer-events: none; background: #06243a; border: 1px solid var(--cyan);
@@ -256,13 +263,13 @@
             <div class="panel-body">
               <div class="special-control">
                 <label><input id="specialListToggle" type="checkbox" /> 犯人有在特殊名單上</label>
-                <div class="limit-note" id="ticketLimitNote">一般犯人最多可開 <strong>3</strong> 張罰單；勾選特殊名單後最多 <strong>6</strong> 張。</div>
+                <div class="limit-note" id="ticketLimitNote">一般案件最多 3 項罪名；已列入特殊名單且具重大惡劣情節者最多 6 項。應優先採用最直接、情節最重大的罪名。</div>
               </div>
               <div id="packagePicker" class="category common-laws collapsed" style="margin-bottom:14px">
                 <h3><span>法條套裝 <span class="hint">快速套用</span></span><button class="collapse-btn" id="togglePackages" type="button">展開</button></h3>
                 <div class="package-panel-body">
                   <div class="package-panel-tools">
-                    <div class="hint">套裝會一次加入常見法條，仍會遵守一般 3 張、特殊名單 6 張的罰單上限。</div>
+                    <div class="hint">套裝會一次加入常見法條，仍會遵守一般 3 項、特殊名單 6 項的罪名上限。</div>
                     <button class="danger" id="clearSelectedFromPackages" type="button">清空已選</button>
                   </div>
                   <div id="packageGrid" class="package-grid"></div>
@@ -279,10 +286,7 @@
           </div>
           <div class="panel-body">
             <div class="grid grid-2">
-              <div>
-                <label>折扣 / 減刑 (%)</label>
-                <input id="discount" type="number" min="0" max="100" value="0" />
-              </div>
+              <div class="hint" style="line-height:1.6">刑期依成立法條累加，禁止自行減刑。<br>有重罪時只執行監禁，不另執行公共服務。</div>
               <div>
                 <label>手動加罰金 ($)</label>
                 <input id="extraFine" type="number" min="0" value="0" />
@@ -302,6 +306,32 @@
 
     <section id="laws" class="view">
       <div class="panel">
+        <div class="panel-title"><span>MochiRP 城市法律｜判刑原則與定義</span><span class="hint">依提供的 Markdown 更新</span></div>
+        <div class="panel-body law-reference">
+          <details><summary>判刑</summary><dl>
+            <dt>違規</dt><dd>原則上於違規現場直接開設罰單後放行，無須帶回警局審問；若當事人拒絕配合、無法確認身分或另涉其他案件則不在此限</dd>
+            <dt>輕罪</dt><dd>需帶回警局進行審問，依法開設罰單，並判處公共服務作為處罰</dd>
+            <dt>重罪</dt><dd>需帶回警局進行審問，依法開設罰單，並判處監禁；重罪刑期不得低於 20 個月</dd>
+            <dt>同謀</dt><dd>搶劫建物案件之協助者統一適用 5-010「搶劫同謀」；其他犯罪之同謀，原則上依其參與之主要犯罪罪名處理，法條另有規定者除外</dd>
+            <dt>罪名上限</dt><dd>一般案件單次最多開立 3 項罪名；若行為具有明顯惡意、反覆犯罪、蓄意擴大事件或其他重大惡劣情節(已被列在特殊名單上)，最多可開立 6 項罪名 罪名上限僅限制可開立之罪名數量，不代表執法人員得任意挑選較輕罪名；應優先採用與實際犯罪行為最直接、情節最重大之罪名。</dd>
+            <dt>刑期</dt><dd>輕罪之刑期數字代表公共服務次數；重罪之刑期數字代表監禁月數。若同一案件同時成立輕罪與重罪，僅執行監禁，不另執行公共服務；各罪罰款仍依法計算</dd>
+            <dt>刑期計算</dt><dd>成立多項罪名時，刑期依實際成立之法條累加計算，不得自行刪減、折抵或降低刑期</dd>
+            <dt>減刑</dt><dd>執法人員不得以認罪、配合調查、繳納罰款、和解、態度良好或其他理由擅自減少法定刑期</dd>
+          </dl></details>
+          <details><summary>定義</summary><dl>
+            <dt>危險物品</dt><dd>彈藥、刀械、炸藥及其他依法列管之危險物品；槍械另依 Class A、Class B 槍械相關法條處理</dd>
+            <dt>管制醫療用品</dt><dd>血袋、針劑及其他依法列管之醫療用品</dd>
+            <dt>保育類動物</dt><dd>海龜、各類鯊魚、海豚及其他經城市公告列管之保育類動物</dd>
+            <dt>非法作物&amp;毒品</dt><dd>大麻及其種子、植株、毒品原料、毒品加工品，以及其他經城市公告列管之毒品</dd>
+            <dt>金融或營利設施</dt><dd>ATM、販賣機及其他具有金錢儲存、交易或營利用途之設施</dd>
+            <dt>Class A 槍械</dt><dd>半自動手槍</dd>
+            <dt>Class B 槍械</dt><dd>除 Class A 槍械以外之所有受管制槍械</dd>
+            <dt>超速</dt><dd>市區內超過80km/h ; 高速公路超過150km/h</dd>
+          </dl></details>
+          <p class="hint">表格與描述若有差異，計算器採用表格中的類型、罰款與刑期。1-004 原文列為違規且刑期為 10，本頁沿用原有方式列入公共服務。2-005 依精神或身體傷害選擇處罰，共用一個法條編號，只計一項罪名。</p>
+        </div>
+      </div>
+      <div class="panel">
         <div class="panel-title">
           <span>資料庫記錄</span>
           <div class="toolbar">
@@ -310,7 +340,7 @@
           </div>
         </div>
         <div class="panel-body">
-          <div class="hint" style="margin-bottom:12px">法條類型、罰金、刑期/公共服務可直接編輯，資料會自動存在此瀏覽器。違規與輕罪的刑期數字會計入公共服務，重罪才計入監禁月數；同時有輕罪與重罪時，公共服務次數會併入監禁總刑期。</div>
+          <div class="hint" style="margin-bottom:12px">法條資料依最新 Markdown 更新，空白罰款先以 $0 計算。輕罪刑期代表公共服務次數，重罪代表監禁月數；有重罪時不另執行公共服務，也不將服務次數換算為監禁。資料可編輯並儲存於此瀏覽器；請依正式法條維護，不得自行減刑。</div>
           <div class="table-wrap">
             <table>
               <thead>
@@ -385,1042 +415,1046 @@
   <div class="toast" id="toast"></div>
 
   <script>
-    const STORAGE_KEY = 'mochirp-lspd-mdt-rules-v1-lawdoc';
+    const STORAGE_KEY = 'mochirp-lspd-mdt-rules-v2-lawdoc-20261002';
     const PACKAGE_STORAGE_KEY = 'mochirp-lspd-mdt-law-packages-v2';
     const DEFAULT_RULES = [
-          {
-                "id": "1-001",
-                "code": "1-001",
-                "category": "交通相關",
-                "type": "違規",
-                "name": "違反交通號誌",
-                "fine": 500,
-                "prison": 0,
-                "labor": 0,
-                "sentence": 0,
-                "note": "違反交通燈或交通號誌行車"
-          },
-          {
-                "id": "1-002",
-                "code": "1-002",
-                "category": "交通相關",
-                "type": "違規",
-                "name": "違規停車",
-                "fine": 500,
-                "prison": 0,
-                "labor": 0,
-                "sentence": 0,
-                "note": "在限制停車或是禁止停車的地方停車或是以未經許可的方式停車"
-          },
-          {
-                "id": "1-003",
-                "code": "1-003",
-                "category": "交通相關",
-                "type": "違規",
-                "name": "超速或危險駕駛",
-                "fine": 1000,
-                "prison": 0,
-                "labor": 0,
-                "sentence": 0,
-                "note": "在道路上以危險方式駕車、超過規定之最高時速80公里"
-          },
-          {
-                "id": "1-004",
-                "code": "1-004",
-                "category": "交通相關",
-                "type": "違規",
-                "name": "無照駕駛",
-                "fine": 1000,
-                "prison": 0,
-                "labor": 10,
-                "sentence": 10,
-                "note": "未持有其駕駛的車輛所屬車輛種類的駕駛執照或執照過期失效"
-          },
-          {
-                "id": "1-005",
-                "code": "1-005",
-                "category": "交通相關",
-                "type": "違規",
-                "name": "肇事逃逸",
-                "fine": 1000,
-                "prison": 0,
-                "labor": 0,
-                "sentence": 0,
-                "note": "發生車禍事故當下，肇事者沒有下車查看受害者傷亡情形或留下來處理好現場，就立即自行離開"
-          },
-          {
-                "id": "1-006",
-                "code": "1-006",
-                "category": "交通相關",
-                "type": "輕罪",
-                "name": "駕駛非自己名下車輛",
-                "fine": 3000,
-                "prison": 0,
-                "labor": 10,
-                "sentence": 10,
-                "note": "非試駕的情況下，在路上駕駛非自己名下的車輛"
-          },
-          {
-                "id": "1-007",
-                "code": "1-007",
-                "category": "交通相關",
-                "type": "輕罪",
-                "name": "未禮讓緊急車輛",
-                "fine": 3000,
-                "prison": 0,
-                "labor": 10,
-                "sentence": 10,
-                "note": "未禮讓值勤中的救護車、消防車、警備車等通行"
-          },
-          {
-                "id": "1-008",
-                "code": "1-008",
-                "category": "交通相關",
-                "type": "輕罪",
-                "name": "利用交通工具拒捕",
-                "fine": 1000,
-                "prison": 0,
-                "labor": 10,
-                "sentence": 10,
-                "note": "利用交通工具逃避逮捕"
-          },
-          {
-                "id": "1-009",
-                "code": "1-009",
-                "category": "交通相關",
-                "type": "輕罪",
-                "name": "徒步拒捕",
-                "fine": 800,
-                "prison": 0,
-                "labor": 10,
-                "sentence": 10,
-                "note": "徒步逃避逮捕"
-          },
-          {
-                "id": "1-010",
-                "code": "1-010",
-                "category": "交通相關",
-                "type": "重罪",
-                "name": "搶奪公職車輛",
-                "fine": 10000,
-                "prison": 15,
-                "labor": 0,
-                "sentence": 15,
-                "note": "搶奪政府機關之載具(包括但不限於：汽車、直升機、摩托車、船隻、噴射機、民航機、輕航機)"
-          },
-          {
-                "id": "1-011",
-                "code": "1-011",
-                "category": "交通相關",
-                "type": "重罪",
-                "name": "酒後駕駛",
-                "fine": 2000,
-                "prison": 15,
-                "labor": 0,
-                "sentence": 15,
-                "note": "在酒精、酒類飲品影響下控制並駕駛機動車輛"
-          },
-          {
-                "id": "1-012",
-                "code": "1-012",
-                "category": "交通相關",
-                "type": "重罪",
-                "name": "惡意衝撞市民",
-                "fine": 5000,
-                "prison": 20,
-                "labor": 0,
-                "sentence": 20,
-                "note": "駕駛任何載具惡意衝撞市民"
-          },
-          {
-                "id": "1-013",
-                "code": "1-013",
-                "category": "交通相關",
-                "type": "輕罪",
-                "name": "阻礙交通",
-                "fine": 1500,
-                "prison": 0,
-                "labor": 10,
-                "sentence": 10,
-                "note": "無任何理由占用車道使交通系統無法正常運作"
-          },
-          {
-                "id": "1-014",
-                "code": "1-014",
-                "category": "交通相關",
-                "type": "違規",
-                "name": "噪音駕駛",
-                "fine": 500,
-                "prison": 0,
-                "labor": 0,
-                "sentence": 0,
-                "note": "於公共道路上惡意製造噪音（如排氣聲過大、喇叭長鳴），嚴重影響公共秩序或市民安寧"
-          },
-          {
-                "id": "1-015",
-                "code": "1-015",
-                "category": "交通相關",
-                "type": "重罪",
-                "name": "偷車罪",
-                "fine": 1500,
-                "prison": 15,
-                "labor": 0,
-                "sentence": 15,
-                "note": "偷竊車輛作為己用"
-          },
-          {
-                "id": "2-001",
-                "code": "2-001",
-                "category": "民事或傷害罪行相關",
-                "type": "輕罪",
-                "name": "威脅或恐嚇市民",
-                "fine": 500,
-                "prison": 0,
-                "labor": 10,
-                "sentence": 10,
-                "note": "以加害生命、身體、自由、名譽、財產之事恐嚇他人"
-          },
-          {
-                "id": "2-002",
-                "code": "2-002",
-                "category": "民事或傷害罪行相關",
-                "type": "輕罪",
-                "name": "誤傷",
-                "fine": 1500,
-                "prison": 0,
-                "labor": 15,
-                "sentence": 15,
-                "note": "因正當行為但不正當操作使他人受到傷害"
-          },
-          {
-                "id": "2-003",
-                "code": "2-003",
-                "category": "民事或傷害罪行相關",
-                "type": "輕罪",
-                "name": "勒索市民",
-                "fine": 2000,
-                "prison": 0,
-                "labor": 15,
-                "sentence": 15,
-                "note": "以恫嚇的方式作出不當要求，為了使自己或另一人獲益，或意圖使另一人遭受損失"
-          },
-          {
-                "id": "2-004",
-                "code": "2-004",
-                "category": "民事或傷害罪行相關",
-                "type": "輕罪",
-                "name": "綁架市民",
-                "fine": 10000,
-                "prison": 0,
-                "labor": 20,
-                "sentence": 20,
-                "note": "以任何目的綁架他人或綁架他人當人質"
-          },
-          {
-                "id": "2-005",
-                "code": "2-005",
-                "category": "民事或傷害罪行相關",
-                "type": "輕罪",
-                "name": "傷害市民",
-                "fine": 15000,
-                "prison": 0,
-                "labor": 20,
-                "sentence": 20,
-                "note": "因襲擊他人致造成身體傷害，不只是侷限於身體，分為身體上的傷害與精神上的傷害，如果精神上受到傷害，仍可能成立輕微傷害罪(罰款$500;刑期:10)"
-          },
-          {
-                "id": "2-006",
-                "code": "2-006",
-                "category": "民事或傷害罪行相關",
-                "type": "重罪",
-                "name": "擊暈市民",
-                "fine": 30000,
-                "prison": 20,
-                "labor": 0,
-                "sentence": 20,
-                "note": "攻擊致使市民失去行動能力"
-          },
-          {
-                "id": "2-007",
-                "code": "2-007",
-                "category": "民事或傷害罪行相關",
-                "type": "重罪",
-                "name": "傷害公職人員",
-                "fine": 20000,
-                "prison": 20,
-                "labor": 0,
-                "sentence": 20,
-                "note": "因襲擊他人致造成身體傷害，不只是侷限於身體，分為身體上的傷害與精神上的傷害，如果精神上受到傷害，仍可能成立輕微傷害罪(罰款$500;刑期:10)"
-          },
-          {
-                "id": "2-008",
-                "code": "2-008",
-                "category": "民事或傷害罪行相關",
-                "type": "重罪",
-                "name": "綁架公職人員",
-                "fine": 35000,
-                "prison": 20,
-                "labor": 0,
-                "sentence": 20,
-                "note": "以任何目的綁架公職人員或綁架公職人員當人質"
-          },
-          {
-                "id": "2-009",
-                "code": "2-009",
-                "category": "民事或傷害罪行相關",
-                "type": "重罪",
-                "name": "擊暈公職人員",
-                "fine": 50000,
-                "prison": 30,
-                "labor": 0,
-                "sentence": 30,
-                "note": "攻擊致使公職人員失去正常行為能力"
-          },
-          {
-                "id": "2-010",
-                "code": "2-010",
-                "category": "民事或傷害罪行相關",
-                "type": "輕罪",
-                "name": "妨礙公務",
-                "fine": 3000,
-                "prison": 0,
-                "labor": 10,
-                "sentence": 10,
-                "note": "一切阻擾公務員行使職務的行為，包括以暴力、恐嚇等方式施加於正在執行職務的公務員，或是侮辱公務員、政府機構等等"
-          },
-          {
-                "id": "2-011",
-                "code": "2-011",
-                "category": "民事或傷害罪行相關",
-                "type": "輕罪",
-                "name": "公然侮辱",
-                "fine": 5000,
-                "prison": 0,
-                "labor": 20,
-                "sentence": 20,
-                "note": "不涉及敘述事實的言語謾罵、動作或文字圖畫"
-          },
-          {
-                "id": "2-012",
-                "code": "2-012",
-                "category": "民事或傷害罪行相關",
-                "type": "輕罪",
-                "name": "公共危險",
-                "fine": 2000,
-                "prison": 0,
-                "labor": 15,
-                "sentence": 15,
-                "note": "足以造成特定或不特定多數人死亡或身體健康受到傷害以及財物受損等嚴重後果之具有公共危險性之犯罪行為"
-          },
-          {
-                "id": "2-013",
-                "code": "2-013",
-                "category": "民事或傷害罪行相關",
-                "type": "輕罪",
-                "name": "妨害風化",
-                "fine": 800,
-                "prison": 0,
-                "labor": 10,
-                "sentence": 10,
-                "note": "媒介色情、提供場所給人為性交或猥褻行為、意圖營利而強迫男女與他人為性交或猥褻、在大庭廣眾下為猥褻行為、到散布猥褻物品等等"
-          },
-          {
-                "id": "2-014",
-                "code": "2-014",
-                "category": "民事或傷害罪行相關",
-                "type": "輕罪",
-                "name": "性騷擾",
-                "fine": 1500,
-                "prison": 0,
-                "labor": 10,
-                "sentence": 10,
-                "note": "任何人向別人做出一些不受歡迎而帶有性意味的冒犯行為，令對方感到不安、被侮辱、受威嚇或不被尊重"
-          },
-          {
-                "id": "2-015",
-                "code": "2-015",
-                "category": "民事或傷害罪行相關",
-                "type": "輕罪",
-                "name": "情色交易",
-                "fine": 1500,
-                "prison": 0,
-                "labor": 10,
-                "sentence": 10,
-                "note": "與他人發生性行為以賺取金錢或任何回報"
-          },
-          {
-                "id": "2-016",
-                "code": "2-016",
-                "category": "民事或傷害罪行相關",
-                "type": "輕罪",
-                "name": "毀損他人財物",
-                "fine": 3000,
-                "prison": 0,
-                "labor": 10,
-                "sentence": 10,
-                "note": "無合法辯解而摧毀或損壞屬於他人的財產"
-          },
-          {
-                "id": "2-017",
-                "code": "2-017",
-                "category": "民事或傷害罪行相關",
-                "type": "輕罪",
-                "name": "盜竊他人財物",
-                "fine": 3000,
-                "prison": 0,
-                "labor": 10,
-                "sentence": 10,
-                "note": "不誠實地挪佔屬於他人的財物，意圖永久奪去他人的財物"
-          },
-          {
-                "id": "2-018",
-                "code": "2-018",
-                "category": "民事或傷害罪行相關",
-                "type": "輕罪",
-                "name": "擾亂治安",
-                "fine": 1000,
-                "prison": 0,
-                "labor": 10,
-                "sentence": 10,
-                "note": "包括但不限於:以非必要的噪音破壞鄰里、社區的安靜和良好秩序"
-          },
-          {
-                "id": "2-019",
-                "code": "2-019",
-                "category": "民事或傷害罪行相關",
-                "type": "輕罪",
-                "name": "公眾場所制造噪音",
-                "fine": 1000,
-                "prison": 0,
-                "labor": 10,
-                "sentence": 10,
-                "note": "公眾地方發出的噪音，包括電視機、冷氣機或狗隻等的噪音，以及源自公眾地方的收音機、小販或揚聲器等的噪音"
-          },
-          {
-                "id": "2-020",
-                "code": "2-020",
-                "category": "民事或傷害罪行相關",
-                "type": "輕罪",
-                "name": "侵犯他人隱私或竊聽竊錄罪",
-                "fine": 800,
-                "prison": 0,
-                "labor": 10,
-                "sentence": 10,
-                "note": "A.利用工具或設備窺視他人非公開的活動或身體隱私部位\nB.沒有正當理由利用工具、設備、錄音、照相、錄影或以電磁等方式窺視、竊聽、竊錄他人非公開之活動、言論、談話或身體隱私部位\nC.以錄音、照相、錄影或電磁紀錄竊錄他人非公開之活動、言論、談話或身體隱私部位"
-          },
-          {
-                "id": "2-021",
-                "code": "2-021",
-                "category": "民事或傷害罪行相關",
-                "type": "輕罪",
-                "name": "詐騙",
-                "fine": 1500,
-                "prison": 0,
-                "labor": 10,
-                "sentence": 10,
-                "note": "故意欺騙以獲取不公平或非法收益，或剝奪受害者的合法權利"
-          },
-          {
-                "id": "2-022",
-                "code": "2-022",
-                "category": "民事或傷害罪行相關",
-                "type": "輕罪",
-                "name": "未能出示身份證明文件或執照",
-                "fine": 3000,
-                "prison": 0,
-                "labor": 10,
-                "sentence": 10,
-                "note": "未能出示有效身分證明文件或執照而沒有合理解釋"
-          },
-          {
-                "id": "2-023",
-                "code": "2-023",
-                "category": "民事或傷害罪行相關",
-                "type": "輕罪",
-                "name": "非法途徑取得執照",
-                "fine": 2000,
-                "prison": 0,
-                "labor": 10,
-                "sentence": 10,
-                "note": "不按規程、秩序、手續、法律規定的標準、不是權力機關簽發的證件"
-          },
-          {
-                "id": "2-024",
-                "code": "2-024",
-                "category": "民事或傷害罪行相關",
-                "type": "重罪",
-                "name": "越獄",
-                "fine": 4000,
-                "prison": 20,
-                "labor": 0,
-                "sentence": 20,
-                "note": "罪犯於服刑期間有任何逃離監獄之行為"
-          },
-          {
-                "id": "2-025",
-                "code": "2-025",
-                "category": "民事或傷害罪行相關",
-                "type": "重罪",
-                "name": "協助越獄",
-                "fine": 2000,
-                "prison": 20,
-                "labor": 0,
-                "sentence": 20,
-                "note": "協助越獄犯完成任何越獄行為"
-          },
-          {
-                "id": "2-026",
-                "code": "2-026",
-                "category": "民事或傷害罪行相關",
-                "type": "輕罪",
-                "name": "不服從警方指令",
-                "fine": 2000,
-                "prison": 0,
-                "labor": 10,
-                "sentence": 10,
-                "note": "於執法人員依法執行職務（如盤查、截停、要求出示證件）時，拒絕配合或惡意拖延"
-          },
-          {
-                "id": "2-027",
-                "code": "2-027",
-                "category": "民事或傷害罪行相關",
-                "type": "輕罪",
-                "name": "在公共場合揮舞武器",
-                "fine": 2000,
-                "prison": 0,
-                "labor": 10,
-                "sentence": 10,
-                "note": "於非正當防衛或任務情境，在公共區域持械恐嚇或展示武器，導致市民恐慌或影響公共安全"
-          },
-          {
-                "id": "2-028",
-                "code": "2-028",
-                "category": "民事或傷害罪行相關",
-                "type": "輕罪",
-                "name": "非法侵入私人場所",
-                "fine": 3000,
-                "prison": 0,
-                "labor": 10,
-                "sentence": 10,
-                "note": "未經允許擅自進入住宅或私人商業建築，雖未造成財產損失仍屬違法行為"
-          },
-          {
-                "id": "2-029",
-                "code": "2-029",
-                "category": "民事或傷害罪行相關",
-                "type": "輕罪",
-                "name": "公共滋擾",
-                "fine": 800,
-                "prison": 0,
-                "labor": 10,
-                "sentence": 10,
-                "note": "於醫院、警局、商店等公共場合長時間鬧場、喧嘩或其他行為，導致公共場所秩序混亂或阻礙他人正常活動"
-          },
-          {
-                "id": "2-030",
-                "code": "2-030",
-                "category": "民事或傷害罪行相關",
-                "type": "輕罪",
-                "name": "干擾審訊或調查",
-                "fine": 1500,
-                "prison": 0,
-                "labor": 10,
-                "sentence": 10,
-                "note": "於警方或司法機關進行審訊、調查時，惡意干擾、打斷或阻礙調查過程"
-          },
-          {
-                "id": "2-031",
-                "code": "2-031",
-                "category": "民事或傷害罪行相關",
-                "type": "輕罪",
-                "name": "公共猥褻行為",
-                "fine": 800,
-                "prison": 0,
-                "labor": 10,
-                "sentence": 10,
-                "note": "於公共場合裸露、脫衣或做出不雅舉動，雖未涉及性交易，仍屬違法"
-          },
-          {
-                "id": "2-032",
-                "code": "2-032",
-                "category": "民事或傷害罪行相關",
-                "type": "輕罪",
-                "name": "擅闖管制區域",
-                "fine": 1500,
-                "prison": 0,
-                "labor": 10,
-                "sentence": 10,
-                "note": "未經允許進入警局、醫院 restricted 區域或其他受管制場所"
-          },
-          {
-                "id": "2-033",
-                "code": "2-033",
-                "category": "民事或傷害罪行相關",
-                "type": "輕罪",
-                "name": "妨礙拘捕",
-                "fine": 3000,
-                "prison": 0,
-                "labor": 10,
-                "sentence": 10,
-                "note": "於警方依法拘捕他人時，第三人以阻擋、干擾或脅迫方式妨礙執法"
-          },
-          {
-                "id": "3-001",
-                "code": "3-001",
-                "category": "違禁品相關",
-                "type": "重罪",
-                "name": "非法持有CLASS A槍械",
-                "fine": 5000,
-                "prison": 20,
-                "labor": 0,
-                "sentence": 20,
-                "note": "未持有武器許可證非法持有半自動型槍械"
-          },
-          {
-                "id": "3-002",
-                "code": "3-002",
-                "category": "違禁品相關",
-                "type": "重罪",
-                "name": "非法持有CLASS B槍械",
-                "fine": 10000,
-                "prison": 20,
-                "labor": 0,
-                "sentence": 20,
-                "note": "非法持有全自動型槍械"
-          },
-          {
-                "id": "3-003",
-                "code": "3-003",
-                "category": "違禁品相關",
-                "type": "重罪",
-                "name": "非法持有未經登記的槍械",
-                "fine": 1500,
-                "prison": 20,
-                "labor": 0,
-                "sentence": 20,
-                "note": "持有未經警政署登記手續登記的槍械"
-          },
-          {
-                "id": "3-004",
-                "code": "3-004",
-                "category": "違禁品相關",
-                "type": "重罪",
-                "name": "販賣非法槍械",
-                "fine": 2500,
-                "prison": 20,
-                "labor": 0,
-                "sentence": 20,
-                "note": "販賣任何未經執法部門登記之槍枝"
-          },
-          {
-                "id": "3-005",
-                "code": "3-005",
-                "category": "違禁品相關",
-                "type": "重罪",
-                "name": "持有危險物品",
-                "fine": 1000,
-                "prison": 20,
-                "labor": 0,
-                "sentence": 20,
-                "note": "持有執法部門登記在案之危險物品"
-          },
-          {
-                "id": "3-006",
-                "code": "3-006",
-                "category": "違禁品相關",
-                "type": "輕罪",
-                "name": "持有贓物",
-                "fine": 2000,
-                "prison": 0,
-                "labor": 20,
-                "sentence": 20,
-                "note": "持有執法部門登記在案之贓物"
-          },
-          {
-                "id": "3-007",
-                "code": "3-007",
-                "category": "違禁品相關",
-                "type": "重罪",
-                "name": "販賣非法物品",
-                "fine": 5000,
-                "prison": 15,
-                "labor": 0,
-                "sentence": 15,
-                "note": "販賣不法所得"
-          },
-          {
-                "id": "3-008",
-                "code": "3-008",
-                "category": "違禁品相關",
-                "type": "輕罪",
-                "name": "持有黑錢/非法物品",
-                "fine": 3000,
-                "prison": 0,
-                "labor": 20,
-                "sentence": 20,
-                "note": "持有執法部門登記在案之黑錢/非法物品"
-          },
-          {
-                "id": "3-009",
-                "code": "3-009",
-                "category": "違禁品相關",
-                "type": "重罪",
-                "name": "販賣毒品",
-                "fine": 5000,
-                "prison": 15,
-                "labor": 0,
-                "sentence": 15,
-                "note": "販賣執法部門登記在案之各類級毒品"
-          },
-          {
-                "id": "3-010",
-                "code": "3-010",
-                "category": "違禁品相關",
-                "type": "重罪",
-                "name": "吸毒",
-                "fine": 800,
-                "prison": 10,
-                "labor": 0,
-                "sentence": 10,
-                "note": "吸食執法部門登記在案之各類級毒品"
-          },
-          {
-                "id": "3-011",
-                "code": "3-011",
-                "category": "違禁品相關",
-                "type": "重罪",
-                "name": "非法持有毒品",
-                "fine": 4000,
-                "prison": 20,
-                "labor": 0,
-                "sentence": 20,
-                "note": "持有執法部門登記在案之各類級毒品"
-          },
-          {
-                "id": "3-012",
-                "code": "3-012",
-                "category": "違禁品相關",
-                "type": "重罪",
-                "name": "非法持有大量毒品",
-                "fine": 10000,
-                "prison": 20,
-                "labor": 0,
-                "sentence": 20,
-                "note": "持有執法部門登記在案之各類級毒品及材料總計超過50個"
-          },
-          {
-                "id": "3-013",
-                "code": "3-013",
-                "category": "違禁品相關",
-                "type": "重罪",
-                "name": "非法種植受管制植物",
-                "fine": 3000,
-                "prison": 20,
-                "labor": 0,
-                "sentence": 20,
-                "note": "種植執法部門登記在案之各類級毒品之原材料"
-          },
-          {
-                "id": "3-014",
-                "code": "3-014",
-                "category": "違禁品相關",
-                "type": "重罪",
-                "name": "未經許可持有公職專用物品",
-                "fine": 3000,
-                "prison": 20,
-                "labor": 0,
-                "sentence": 20,
-                "note": "非公職人員且持有公職人員相關物品者"
-          },
-          {
-                "id": "3-015",
-                "code": "3-015",
-                "category": "違禁品相關",
-                "type": "重罪",
-                "name": "非法販賣公職專用物品",
-                "fine": 5000,
-                "prison": 20,
-                "labor": 0,
-                "sentence": 20,
-                "note": "販賣公職人員相關器材（包括但不限於：車輛、直升機、機車、船隻、槍械、輔具、文書用品、耗材）"
-          },
-          {
-                "id": "3-016",
-                "code": "3-016",
-                "category": "違禁品相關",
-                "type": "輕罪",
-                "name": "未誠實告知執法人員身上持有傷害性物品",
-                "fine": 3000,
-                "prison": 0,
-                "labor": 10,
-                "sentence": 10,
-                "note": "經執法人員詢問後未確實回報身上持有傷害性物品"
-          },
-          {
-                "id": "3-017",
-                "code": "3-017",
-                "category": "違禁品相關",
-                "type": "重罪",
-                "name": "非法使用槍械",
-                "fine": 6000,
-                "prison": 20,
-                "labor": 0,
-                "sentence": 20,
-                "note": "使用槍械作非法用途"
-          },
-          {
-                "id": "5-001",
-                "code": "5-001",
-                "category": "搶劫、嚴重危害公共安全或走私相關",
-                "type": "重罪",
-                "name": "毀損金融設施",
-                "fine": 5000,
-                "prison": 10,
-                "labor": 0,
-                "sentence": 10,
-                "note": "破壞任何金融設施並從中獲利"
-          },
-          {
-                "id": "5-002",
-                "code": "5-002",
-                "category": "搶劫、嚴重危害公共安全或走私相關",
-                "type": "重罪",
-                "name": "非法走私車輛",
-                "fine": 8000,
-                "prison": 15,
-                "labor": 0,
-                "sentence": 15,
-                "note": "轉運執法部門未登記在案之各類級車輛"
-          },
-          {
-                "id": "5-003",
-                "code": "5-003",
-                "category": "搶劫、嚴重危害公共安全或走私相關",
-                "type": "重罪",
-                "name": "協助不法組織進行非法行為",
-                "fine": 5000,
-                "prison": 15,
-                "labor": 0,
-                "sentence": 15,
-                "note": "協助買兇、非法運送毒品、運鈔車搶劫、ATM搶劫、偷車(任務板)"
-          },
-          {
-                "id": "5-004",
-                "code": "5-004",
-                "category": "搶劫、嚴重危害公共安全或走私相關",
-                "type": "重罪",
-                "name": "搶劫市民",
-                "fine": 3000,
-                "prison": 15,
-                "labor": 0,
-                "sentence": 15,
-                "note": "以任何武力等級之武器，強迫市民交出其財產"
-          },
-          {
-                "id": "5-005",
-                "code": "5-005",
-                "category": "搶劫、嚴重危害公共安全或走私相關",
-                "type": "重罪",
-                "name": "搶劫商店",
-                "fine": 10000,
-                "prison": 20,
-                "labor": 0,
-                "sentence": 20,
-                "note": "搶劫城市裡的任何商店以獲得不法之財"
-          },
-          {
-                "id": "5-006",
-                "code": "5-006",
-                "category": "搶劫、嚴重危害公共安全或走私相關",
-                "type": "重罪",
-                "name": "搶劫醫療物資",
-                "fine": 8000,
-                "prison": 20,
-                "labor": 0,
-                "sentence": 20,
-                "note": "搶劫軍隊的醫療物資"
-          },
-          {
-                "id": "5-007",
-                "code": "5-007",
-                "category": "搶劫、嚴重危害公共安全或走私相關",
-                "type": "重罪",
-                "name": "搶劫珠寶",
-                "fine": 15000,
-                "prison": 20,
-                "labor": 0,
-                "sentence": 20,
-                "note": "搶劫珠寶店以獲得不法之財"
-          },
-          {
-                "id": "5-008",
-                "code": "5-008",
-                "category": "搶劫、嚴重危害公共安全或走私相關",
-                "type": "重罪",
-                "name": "搶劫小銀行",
-                "fine": 20000,
-                "prison": 20,
-                "labor": 0,
-                "sentence": 20,
-                "note": "搶劫小銀行以獲得不法之財"
-          },
-          {
-                "id": "5-009",
-                "code": "5-009",
-                "category": "搶劫、嚴重危害公共安全或走私相關",
-                "type": "重罪",
-                "name": "搶劫太平洋銀行",
-                "fine": 30000,
-                "prison": 20,
-                "labor": 0,
-                "sentence": 20,
-                "note": "搶劫太平洋銀行以獲得不法之財"
-          },
-          {
-                "id": "5-010",
-                "code": "5-010",
-                "category": "搶劫、嚴重危害公共安全或走私相關",
-                "type": "重罪",
-                "name": "搶劫同謀",
-                "fine": 10000,
-                "prison": 20,
-                "labor": 0,
-                "sentence": 20,
-                "note": "搶劫建物案之同謀（協助者）"
-          },
-          {
-                "id": "5-011",
-                "code": "5-011",
-                "category": "搶劫、嚴重危害公共安全或走私相關",
-                "type": "重罪",
-                "name": "挾持交通工具",
-                "fine": 2000,
-                "prison": 20,
-                "labor": 0,
-                "sentence": 20,
-                "note": "以武力或脅迫手段控制或劫持任何交通工具（如巴士、計程車、船隻、飛機等），威脅駕駛人或乘客安全"
-          },
-          {
-                "id": "5-012",
-                "code": "5-012",
-                "category": "搶劫、嚴重危害公共安全或走私相關",
-                "type": "重罪",
-                "name": "非法武裝集會",
-                "fine": 3000,
-                "prison": 20,
-                "labor": 0,
-                "sentence": 20,
-                "note": "三人以上於公共場合攜帶武器聚集，造成市民恐慌或威脅公共安全"
-          },
-          {
-                "id": "5-013",
-                "code": "5-013",
-                "category": "搶劫、嚴重危害公共安全或走私相關",
-                "type": "輕罪",
-                "name": "非法收購贓物",
-                "fine": 2000,
-                "prison": 0,
-                "labor": 15,
-                "sentence": 15,
-                "note": "明知為非法來源財物，仍進行購買或交換"
-          },
-          {
-                "id": "5-014",
-                "code": "5-014",
-                "category": "搶劫、嚴重危害公共安全或走私相關",
-                "type": "重罪",
-                "name": "非法運送違禁品",
-                "fine": 5000,
-                "prison": 20,
-                "labor": 0,
-                "sentence": 20,
-                "note": "替他人運送毒品、黑錢、槍械或其他違禁品，雖未直接販售，仍屬犯罪行為"
-          },
-          {
-                "id": "5-015",
-                "code": "5-015",
-                "category": "搶劫、嚴重危害公共安全或走私相關",
-                "type": "重罪",
-                "name": "假冒公職人員",
-                "fine": 5000,
-                "prison": 20,
-                "labor": 0,
-                "sentence": 20,
-                "note": "冒充依法任命之公務員或執法人員身分，足以使他人誤信並行使其職權之行為"
-          },
-          {
-                "id": "5-016",
-                "code": "5-016",
-                "category": "搶劫、嚴重危害公共安全或走私相關",
-                "type": "重罪",
-                "name": "未經許可穿著公職人員制服",
-                "fine": 10000,
-                "prison": 20,
-                "labor": 0,
-                "sentence": 20,
-                "note": "未經合法授權而穿著、配戴公職人員之制服、徽章、識別證或相關標誌，足以使他人誤認其具該職務身分之行為"
-          },
-          {
-                "id": "4-001",
-                "code": "4-001",
-                "category": "動物相關",
-                "type": "輕罪",
-                "name": "虐待動物",
-                "fine": 800,
-                "prison": 0,
-                "labor": 10,
-                "sentence": 10,
-                "note": "人類對非人類動物蓄意或非蓄意施行使該動物承受痛苦或傷害的行為"
-          },
-          {
-                "id": "4-002",
-                "code": "4-002",
-                "category": "動物相關",
-                "type": "重罪",
-                "name": "虐待動物致其死亡",
-                "fine": 1600,
-                "prison": 10,
-                "labor": 0,
-                "sentence": 10,
-                "note": "人類對非人類動物蓄意或非蓄意施行使該動物死亡"
-          },
-          {
-                "id": "4-003",
-                "code": "4-003",
-                "category": "動物相關",
-                "type": "重罪",
-                "name": "持有保育類相關產物",
-                "fine": 1000,
-                "prison": 10,
-                "labor": 0,
-                "sentence": 10,
-                "note": "持有保育類動物相關產物，包括但不限於：食品、皮、肉、服飾、包包"
-          },
-          {
-                "id": "4-004",
-                "code": "4-004",
-                "category": "動物相關",
-                "type": "重罪",
-                "name": "持有保育類動物",
-                "fine": 1500,
-                "prison": 10,
-                "labor": 0,
-                "sentence": 10,
-                "note": "持有保育類動物本體"
-          },
-          {
-                "id": "4-005",
-                "code": "4-005",
-                "category": "動物相關",
-                "type": "重罪",
-                "name": "販賣保育類相關產物或本體",
-                "fine": 2000,
-                "prison": 15,
-                "labor": 0,
-                "sentence": 15,
-                "note": "販賣保育類動物相關產物或本體"
-          }
-    ];
+  {
+    "id": "1-001",
+    "code": "1-001",
+    "category": "交通相關",
+    "type": "違規",
+    "name": "違反交通號誌",
+    "fine": 500,
+    "prison": 0,
+    "labor": 0,
+    "sentence": 0,
+    "note": "違反交通燈或交通號誌行車"
+  },
+  {
+    "id": "1-002",
+    "code": "1-002",
+    "category": "交通相關",
+    "type": "違規",
+    "name": "違規停車",
+    "fine": 500,
+    "prison": 0,
+    "labor": 0,
+    "sentence": 0,
+    "note": "在限制停車或是禁止停車的地方停車或是以未經許可的方式停車"
+  },
+  {
+    "id": "1-003",
+    "code": "1-003",
+    "category": "交通相關",
+    "type": "違規",
+    "name": "超速或危險駕駛",
+    "fine": 1500,
+    "prison": 0,
+    "labor": 0,
+    "sentence": 0,
+    "note": "在道路上以危險方式駕車、超過規定之最高時速80公里"
+  },
+  {
+    "id": "1-004",
+    "code": "1-004",
+    "category": "交通相關",
+    "type": "違規",
+    "name": "無照駕駛",
+    "fine": 1500,
+    "prison": 0,
+    "labor": 10,
+    "sentence": 10,
+    "note": "未持有其駕駛的車輛所屬車輛種類的駕駛執照或執照過期失效"
+  },
+  {
+    "id": "1-005",
+    "code": "1-005",
+    "category": "交通相關",
+    "type": "違規",
+    "name": "肇事逃逸",
+    "fine": 1500,
+    "prison": 0,
+    "labor": 0,
+    "sentence": 0,
+    "note": "發生車禍事故當下，肇事者沒有下車查看受害者傷亡情形或留下來處理好現場，就立即自行離開"
+  },
+  {
+    "id": "1-006",
+    "code": "1-006",
+    "category": "交通相關",
+    "type": "輕罪",
+    "name": "駕駛非自己名下車輛",
+    "fine": 2500,
+    "prison": 0,
+    "labor": 10,
+    "sentence": 10,
+    "note": "非試駕的情況下，在路上駕駛非自己名下的車輛"
+  },
+  {
+    "id": "1-007",
+    "code": "1-007",
+    "category": "交通相關",
+    "type": "輕罪",
+    "name": "未禮讓緊急車輛",
+    "fine": 2000,
+    "prison": 0,
+    "labor": 10,
+    "sentence": 10,
+    "note": "未禮讓值勤中的救護車、消防車、警備車等通行"
+  },
+  {
+    "id": "1-008",
+    "code": "1-008",
+    "category": "交通相關",
+    "type": "輕罪",
+    "name": "利用交通工具拒捕",
+    "fine": 2500,
+    "prison": 0,
+    "labor": 10,
+    "sentence": 10,
+    "note": "利用交通工具逃避逮捕"
+  },
+  {
+    "id": "1-009",
+    "code": "1-009",
+    "category": "交通相關",
+    "type": "輕罪",
+    "name": "徒步拒捕",
+    "fine": 1500,
+    "prison": 0,
+    "labor": 10,
+    "sentence": 10,
+    "note": "徒步逃避逮捕"
+  },
+  {
+    "id": "1-010",
+    "code": "1-010",
+    "category": "交通相關",
+    "type": "重罪",
+    "name": "搶奪公職車輛",
+    "fine": 10000,
+    "prison": 20,
+    "labor": 0,
+    "sentence": 20,
+    "note": "搶奪政府機關之載具(包括但不限於：汽車、直升機、摩托車、船隻、噴射機、民航機、輕航機)"
+  },
+  {
+    "id": "1-011",
+    "code": "1-011",
+    "category": "交通相關",
+    "type": "重罪",
+    "name": "酒後駕駛",
+    "fine": 5000,
+    "prison": 20,
+    "labor": 0,
+    "sentence": 20,
+    "note": "在酒精、酒類飲品影響下控制並駕駛機動車輛"
+  },
+  {
+    "id": "1-012",
+    "code": "1-012",
+    "category": "交通相關",
+    "type": "重罪",
+    "name": "惡意衝撞市民",
+    "fine": 8000,
+    "prison": 20,
+    "labor": 0,
+    "sentence": 20,
+    "note": "駕駛任何載具惡意衝撞市民"
+  },
+  {
+    "id": "1-013",
+    "code": "1-013",
+    "category": "交通相關",
+    "type": "輕罪",
+    "name": "阻礙交通",
+    "fine": 1500,
+    "prison": 0,
+    "labor": 10,
+    "sentence": 10,
+    "note": "無任何理由占用車道使交通系統無法正常運作"
+  },
+  {
+    "id": "1-014",
+    "code": "1-014",
+    "category": "交通相關",
+    "type": "違規",
+    "name": "噪音駕駛",
+    "fine": 500,
+    "prison": 0,
+    "labor": 0,
+    "sentence": 0,
+    "note": "於公共道路上惡意製造噪音（如排氣聲過大、喇叭長鳴），嚴重影響公共秩序或市民安寧"
+  },
+  {
+    "id": "1-015",
+    "code": "1-015",
+    "category": "交通相關",
+    "type": "重罪",
+    "name": "偷車罪",
+    "fine": 5000,
+    "prison": 20,
+    "labor": 0,
+    "sentence": 20,
+    "note": "偷竊車輛作為己用"
+  },
+  {
+    "id": "2-001",
+    "code": "2-001",
+    "category": "民事或傷害罪行相關",
+    "type": "輕罪",
+    "name": "威脅或恐嚇市民",
+    "fine": 2000,
+    "prison": 0,
+    "labor": 10,
+    "sentence": 10,
+    "note": "以加害生命、身體、自由、名譽、財產之事恐嚇他人"
+  },
+  {
+    "id": "2-002",
+    "code": "2-002",
+    "category": "民事或傷害罪行相關",
+    "type": "輕罪",
+    "name": "誤傷",
+    "fine": 1500,
+    "prison": 0,
+    "labor": 15,
+    "sentence": 15,
+    "note": "因正當行為但不正當操作使他人受到傷害"
+  },
+  {
+    "id": "2-003",
+    "code": "2-003",
+    "category": "民事或傷害罪行相關",
+    "type": "輕罪",
+    "name": "勒索市民",
+    "fine": 4000,
+    "prison": 0,
+    "labor": 15,
+    "sentence": 15,
+    "note": "以恫嚇的方式作出不當要求，為了使自己或另一人獲益，或意圖使另一人遭受損失"
+  },
+  {
+    "id": "2-004",
+    "code": "2-004",
+    "category": "民事或傷害罪行相關",
+    "type": "輕罪",
+    "name": "綁架市民",
+    "fine": 6000,
+    "prison": 0,
+    "labor": 20,
+    "sentence": 20,
+    "note": "以任何目的綁架他人或綁架他人當人質"
+  },
+  {
+    "id": "2-005",
+    "code": "2-005",
+    "category": "民事或傷害罪行相關",
+    "type": "輕罪",
+    "name": "傷害市民",
+    "fine": 6000,
+    "prison": 0,
+    "labor": 20,
+    "sentence": 20,
+    "note": "襲擊他人，造成身體或精神上的傷害。",
+    "penaltyOptions": [
+      {
+        "label": "精神傷害",
+        "fine": 1500,
+        "prison": 0,
+        "labor": 10,
+        "sentence": 10
+      },
+      {
+        "label": "身體傷害",
+        "fine": 6000,
+        "prison": 0,
+        "labor": 20,
+        "sentence": 20
+      }
+    ]
+  },
+  {
+    "id": "2-006",
+    "code": "2-006",
+    "category": "民事或傷害罪行相關",
+    "type": "重罪",
+    "name": "擊暈市民",
+    "fine": 8000,
+    "prison": 20,
+    "labor": 0,
+    "sentence": 20,
+    "note": "攻擊致使市民失去行動能力"
+  },
+  {
+    "id": "2-007",
+    "code": "2-007",
+    "category": "民事或傷害罪行相關",
+    "type": "重罪",
+    "name": "傷害公職人員",
+    "fine": 10000,
+    "prison": 20,
+    "labor": 0,
+    "sentence": 20,
+    "note": "襲擊公職人員，造成身體或精神上的傷害。"
+  },
+  {
+    "id": "2-008",
+    "code": "2-008",
+    "category": "民事或傷害罪行相關",
+    "type": "重罪",
+    "name": "綁架公職人員",
+    "fine": 15000,
+    "prison": 20,
+    "labor": 0,
+    "sentence": 20,
+    "note": "以任何目的綁架公職人員或綁架公職人員當人質"
+  },
+  {
+    "id": "2-009",
+    "code": "2-009",
+    "category": "民事或傷害罪行相關",
+    "type": "重罪",
+    "name": "擊暈公職人員",
+    "fine": 15000,
+    "prison": 30,
+    "labor": 0,
+    "sentence": 30,
+    "note": "攻擊致使公職人員失去正常行為能力"
+  },
+  {
+    "id": "2-010",
+    "code": "2-010",
+    "category": "民事或傷害罪行相關",
+    "type": "輕罪",
+    "name": "妨礙公務",
+    "fine": 3000,
+    "prison": 0,
+    "labor": 10,
+    "sentence": 10,
+    "note": "一切阻擾公務員行使職務的行為，包括以暴力、恐嚇等方式施加於正在執行職務的公務員，或是侮辱公務員、政府機構等等"
+  },
+  {
+    "id": "2-011",
+    "code": "2-011",
+    "category": "民事或傷害罪行相關",
+    "type": "輕罪",
+    "name": "公然侮辱",
+    "fine": 2000,
+    "prison": 0,
+    "labor": 20,
+    "sentence": 20,
+    "note": "不涉及敘述事實的言語謾罵、動作或文字圖畫"
+  },
+  {
+    "id": "2-012",
+    "code": "2-012",
+    "category": "民事或傷害罪行相關",
+    "type": "輕罪",
+    "name": "公共危險",
+    "fine": 4000,
+    "prison": 0,
+    "labor": 15,
+    "sentence": 15,
+    "note": "足以造成特定或不特定多數人死亡或身體健康受到傷害以及財物受損等嚴重後果之具有公共危險性之犯罪行為"
+  },
+  {
+    "id": "2-013",
+    "code": "2-013",
+    "category": "民事或傷害罪行相關",
+    "type": "輕罪",
+    "name": "妨害風化",
+    "fine": 1500,
+    "prison": 0,
+    "labor": 10,
+    "sentence": 10,
+    "note": "媒介色情、提供場所給人為性交或猥褻行為、意圖營利而強迫男女與他人為性交或猥褻、在大庭廣眾下為猥褻行為、到散布猥褻物品等等"
+  },
+  {
+    "id": "2-014",
+    "code": "2-014",
+    "category": "民事或傷害罪行相關",
+    "type": "輕罪",
+    "name": "性騷擾",
+    "fine": 3000,
+    "prison": 0,
+    "labor": 10,
+    "sentence": 10,
+    "note": "任何人向別人做出一些不受歡迎而帶有性意味的冒犯行為，令對方感到不安、被侮辱、受威嚇或不被尊重"
+  },
+  {
+    "id": "2-015",
+    "code": "2-015",
+    "category": "民事或傷害罪行相關",
+    "type": "輕罪",
+    "name": "情色交易",
+    "fine": 2000,
+    "prison": 0,
+    "labor": 10,
+    "sentence": 10,
+    "note": "與他人發生性行為以賺取金錢或任何回報"
+  },
+  {
+    "id": "2-016",
+    "code": "2-016",
+    "category": "民事或傷害罪行相關",
+    "type": "輕罪",
+    "name": "毀損他人財物",
+    "fine": 2500,
+    "prison": 0,
+    "labor": 10,
+    "sentence": 10,
+    "note": "無合法辯解而摧毀或損壞屬於他人的財產"
+  },
+  {
+    "id": "2-017",
+    "code": "2-017",
+    "category": "民事或傷害罪行相關",
+    "type": "輕罪",
+    "name": "盜竊他人財物",
+    "fine": 3500,
+    "prison": 0,
+    "labor": 10,
+    "sentence": 10,
+    "note": "不誠實地挪佔屬於他人的財物，意圖永久奪去他人的財物"
+  },
+  {
+    "id": "2-018",
+    "code": "2-018",
+    "category": "民事或傷害罪行相關",
+    "type": "輕罪",
+    "name": "擾亂治安",
+    "fine": 1000,
+    "prison": 0,
+    "labor": 10,
+    "sentence": 10,
+    "note": "包括但不限於:以非必要的噪音破壞鄰里、社區的安靜和良好秩序"
+  },
+  {
+    "id": "2-019",
+    "code": "2-019",
+    "category": "民事或傷害罪行相關",
+    "type": "輕罪",
+    "name": "公眾場所制造噪音",
+    "fine": 800,
+    "prison": 0,
+    "labor": 10,
+    "sentence": 10,
+    "note": "公眾地方發出的噪音，包括電視機、冷氣機或狗隻等的噪音，以及源自公眾地方的收音機、小販或揚聲器等的噪音"
+  },
+  {
+    "id": "2-020",
+    "code": "2-020",
+    "category": "民事或傷害罪行相關",
+    "type": "輕罪",
+    "name": "侵犯他人隱私或竊聽竊錄罪",
+    "fine": 2500,
+    "prison": 0,
+    "labor": 10,
+    "sentence": 10,
+    "note": "A.利用工具或設備窺視他人非公開的活動或身體隱私部位 B.沒有正當理由利用工具、設備、錄音、照相、錄影或以電磁等方式窺視、竊聽、竊錄他人非公開之活動、言論、談話或身體隱私部位 C.以錄音、照相、錄影或電磁紀錄竊錄他人非公開之活動、言論、談話或身體隱私部位"
+  },
+  {
+    "id": "2-021",
+    "code": "2-021",
+    "category": "民事或傷害罪行相關",
+    "type": "輕罪",
+    "name": "詐騙",
+    "fine": 3500,
+    "prison": 0,
+    "labor": 10,
+    "sentence": 10,
+    "note": "故意欺騙以獲取不公平或非法收益，或剝奪受害者的合法權利"
+  },
+  {
+    "id": "2-022",
+    "code": "2-022",
+    "category": "民事或傷害罪行相關",
+    "type": "輕罪",
+    "name": "未能出示身份證明文件或執照",
+    "fine": 1500,
+    "prison": 0,
+    "labor": 10,
+    "sentence": 10,
+    "note": "未能出示有效身分證明文件或執照而沒有合理解釋"
+  },
+  {
+    "id": "2-023",
+    "code": "2-023",
+    "category": "民事或傷害罪行相關",
+    "type": "輕罪",
+    "name": "非法途徑取得執照",
+    "fine": 3000,
+    "prison": 0,
+    "labor": 10,
+    "sentence": 10,
+    "note": "不按規程、秩序、手續、法律規定的標準、不是權力機關簽發的證件"
+  },
+  {
+    "id": "2-024",
+    "code": "2-024",
+    "category": "民事或傷害罪行相關",
+    "type": "重罪",
+    "name": "越獄",
+    "fine": 10000,
+    "prison": 20,
+    "labor": 0,
+    "sentence": 20,
+    "note": "罪犯於服刑期間有任何逃離監獄之行為"
+  },
+  {
+    "id": "2-025",
+    "code": "2-025",
+    "category": "民事或傷害罪行相關",
+    "type": "重罪",
+    "name": "協助越獄",
+    "fine": 8000,
+    "prison": 20,
+    "labor": 0,
+    "sentence": 20,
+    "note": "協助越獄犯完成任何越獄行為"
+  },
+  {
+    "id": "2-026",
+    "code": "2-026",
+    "category": "民事或傷害罪行相關",
+    "type": "輕罪",
+    "name": "不服從警方指令",
+    "fine": 2000,
+    "prison": 0,
+    "labor": 10,
+    "sentence": 10,
+    "note": "於執法人員依法執行職務（如盤查、截停、要求出示證件）時，拒絕配合或惡意拖延"
+  },
+  {
+    "id": "2-027",
+    "code": "2-027",
+    "category": "民事或傷害罪行相關",
+    "type": "輕罪",
+    "name": "在公共場合揮舞武器",
+    "fine": 3000,
+    "prison": 0,
+    "labor": 10,
+    "sentence": 10,
+    "note": "於非正當防衛或任務情境，在公共區域持械恐嚇或展示武器，導致市民恐慌或影響公共安全"
+  },
+  {
+    "id": "2-028",
+    "code": "2-028",
+    "category": "民事或傷害罪行相關",
+    "type": "輕罪",
+    "name": "非法侵入私人場所",
+    "fine": 3000,
+    "prison": 0,
+    "labor": 10,
+    "sentence": 10,
+    "note": "未經允許擅自進入住宅或私人商業建築，雖未造成財產損失仍屬違法行為"
+  },
+  {
+    "id": "2-029",
+    "code": "2-029",
+    "category": "民事或傷害罪行相關",
+    "type": "輕罪",
+    "name": "公共滋擾",
+    "fine": 1000,
+    "prison": 0,
+    "labor": 10,
+    "sentence": 10,
+    "note": "於醫院、警局、商店等公共場合長時間鬧場、喧嘩或其他行為，導致公共場所秩序混亂或阻礙他人正常活動"
+  },
+  {
+    "id": "2-030",
+    "code": "2-030",
+    "category": "民事或傷害罪行相關",
+    "type": "輕罪",
+    "name": "干擾審訊或調查",
+    "fine": 2500,
+    "prison": 0,
+    "labor": 10,
+    "sentence": 10,
+    "note": "於警方或司法機關進行審訊、調查時，惡意干擾、打斷或阻礙調查過程"
+  },
+  {
+    "id": "2-031",
+    "code": "2-031",
+    "category": "民事或傷害罪行相關",
+    "type": "輕罪",
+    "name": "公共猥褻行為",
+    "fine": 1500,
+    "prison": 0,
+    "labor": 10,
+    "sentence": 10,
+    "note": "於公共場合裸露、脫衣或做出不雅舉動，雖未涉及性交易，仍屬違法"
+  },
+  {
+    "id": "2-032",
+    "code": "2-032",
+    "category": "民事或傷害罪行相關",
+    "type": "輕罪",
+    "name": "擅闖管制區域",
+    "fine": 2500,
+    "prison": 0,
+    "labor": 10,
+    "sentence": 10,
+    "note": "未經允許進入警局、醫院 restricted 區域或其他受管制場所"
+  },
+  {
+    "id": "2-033",
+    "code": "2-033",
+    "category": "民事或傷害罪行相關",
+    "type": "輕罪",
+    "name": "妨礙拘捕",
+    "fine": 3500,
+    "prison": 0,
+    "labor": 10,
+    "sentence": 10,
+    "note": "於警方依法拘捕他人時，第三人以阻擋、干擾或脅迫方式妨礙執法"
+  },
+  {
+    "id": "3-001",
+    "code": "3-001",
+    "category": "違禁品相關",
+    "type": "重罪",
+    "name": "非法持有CLASS A槍械",
+    "fine": 8000,
+    "prison": 20,
+    "labor": 0,
+    "sentence": 20,
+    "note": "未持有武器許可證非法持有半自動型槍械"
+  },
+  {
+    "id": "3-002",
+    "code": "3-002",
+    "category": "違禁品相關",
+    "type": "重罪",
+    "name": "非法持有CLASS B槍械",
+    "fine": 12000,
+    "prison": 20,
+    "labor": 0,
+    "sentence": 20,
+    "note": "非法持有全自動型槍械"
+  },
+  {
+    "id": "3-003",
+    "code": "3-003",
+    "category": "違禁品相關",
+    "type": "重罪",
+    "name": "非法持有未經登記的槍械",
+    "fine": 5000,
+    "prison": 20,
+    "labor": 0,
+    "sentence": 20,
+    "note": "持有未經警政署登記手續登記的槍械"
+  },
+  {
+    "id": "3-004",
+    "code": "3-004",
+    "category": "違禁品相關",
+    "type": "重罪",
+    "name": "販賣非法槍械",
+    "fine": 12000,
+    "prison": 20,
+    "labor": 0,
+    "sentence": 20,
+    "note": "販賣任何未經執法部門登記之槍枝"
+  },
+  {
+    "id": "3-005",
+    "code": "3-005",
+    "category": "違禁品相關",
+    "type": "重罪",
+    "name": "持有危險物品",
+    "fine": 5000,
+    "prison": 20,
+    "labor": 0,
+    "sentence": 20,
+    "note": "持有執法部門登記在案之危險物品"
+  },
+  {
+    "id": "3-006",
+    "code": "3-006",
+    "category": "違禁品相關",
+    "type": "輕罪",
+    "name": "持有贓物",
+    "fine": 3000,
+    "prison": 0,
+    "labor": 20,
+    "sentence": 20,
+    "note": "持有執法部門登記在案之贓物"
+  },
+  {
+    "id": "3-007",
+    "code": "3-007",
+    "category": "違禁品相關",
+    "type": "重罪",
+    "name": "販賣非法物品",
+    "fine": 8000,
+    "prison": 20,
+    "labor": 0,
+    "sentence": 20,
+    "note": "販賣不法所得"
+  },
+  {
+    "id": "3-008",
+    "code": "3-008",
+    "category": "違禁品相關",
+    "type": "輕罪",
+    "name": "持有黑錢/非法物品",
+    "fine": 3000,
+    "prison": 0,
+    "labor": 20,
+    "sentence": 20,
+    "note": "持有執法部門登記在案之黑錢/非法物品"
+  },
+  {
+    "id": "3-009",
+    "code": "3-009",
+    "category": "違禁品相關",
+    "type": "重罪",
+    "name": "販賣毒品",
+    "fine": 8000,
+    "prison": 20,
+    "labor": 0,
+    "sentence": 20,
+    "note": "販賣執法部門登記在案之各類級毒品"
+  },
+  {
+    "id": "3-010",
+    "code": "3-010",
+    "category": "違禁品相關",
+    "type": "重罪",
+    "name": "吸毒",
+    "fine": 3000,
+    "prison": 20,
+    "labor": 0,
+    "sentence": 20,
+    "note": "吸食執法部門登記在案之各類級毒品"
+  },
+  {
+    "id": "3-011",
+    "code": "3-011",
+    "category": "違禁品相關",
+    "type": "重罪",
+    "name": "非法持有毒品",
+    "fine": 5000,
+    "prison": 20,
+    "labor": 0,
+    "sentence": 20,
+    "note": "持有執法部門登記在案之各類級毒品"
+  },
+  {
+    "id": "3-012",
+    "code": "3-012",
+    "category": "違禁品相關",
+    "type": "重罪",
+    "name": "非法持有大量毒品",
+    "fine": 10000,
+    "prison": 20,
+    "labor": 0,
+    "sentence": 20,
+    "note": "持有執法部門登記在案之各類級毒品及材料總計超過50個"
+  },
+  {
+    "id": "3-013",
+    "code": "3-013",
+    "category": "違禁品相關",
+    "type": "重罪",
+    "name": "非法種植受管制植物",
+    "fine": 8000,
+    "prison": 20,
+    "labor": 0,
+    "sentence": 20,
+    "note": "種植執法部門登記在案之各類級毒品之原材料"
+  },
+  {
+    "id": "3-014",
+    "code": "3-014",
+    "category": "違禁品相關",
+    "type": "重罪",
+    "name": "未經許可持有公職專用物品",
+    "fine": 5000,
+    "prison": 20,
+    "labor": 0,
+    "sentence": 20,
+    "note": "非公職人員且持有公職人員相關物品者"
+  },
+  {
+    "id": "3-015",
+    "code": "3-015",
+    "category": "違禁品相關",
+    "type": "重罪",
+    "name": "非法販賣公職專用物品",
+    "fine": 10000,
+    "prison": 20,
+    "labor": 0,
+    "sentence": 20,
+    "note": "販賣公職人員相關器材（包括但不限於：車輛、直升機、機車、船隻、槍械、輔具、文書用品、耗材）"
+  },
+  {
+    "id": "3-016",
+    "code": "3-016",
+    "category": "違禁品相關",
+    "type": "輕罪",
+    "name": "未誠實告知執法人員身上持有傷害性物品",
+    "fine": 2500,
+    "prison": 0,
+    "labor": 10,
+    "sentence": 10,
+    "note": "經執法人員詢問後未確實回報身上持有傷害性物品"
+  },
+  {
+    "id": "3-017",
+    "code": "3-017",
+    "category": "違禁品相關",
+    "type": "重罪",
+    "name": "非法使用槍械",
+    "fine": 12000,
+    "prison": 20,
+    "labor": 0,
+    "sentence": 20,
+    "note": "使用槍械作非法用途"
+  },
+  {
+    "id": "5-001",
+    "code": "5-001",
+    "category": "搶劫、嚴重危害公共安全或走私相關",
+    "type": "重罪",
+    "name": "毀損金融設施",
+    "fine": 0,
+    "prison": 20,
+    "labor": 0,
+    "sentence": 20,
+    "note": "破壞任何金融設施並從中獲利"
+  },
+  {
+    "id": "5-002",
+    "code": "5-002",
+    "category": "搶劫、嚴重危害公共安全或走私相關",
+    "type": "重罪",
+    "name": "非法走私車輛",
+    "fine": 0,
+    "prison": 20,
+    "labor": 0,
+    "sentence": 20,
+    "note": "轉運執法部門未登記在案之各類級車輛"
+  },
+  {
+    "id": "5-004",
+    "code": "5-004",
+    "category": "搶劫、嚴重危害公共安全或走私相關",
+    "type": "重罪",
+    "name": "搶劫市民",
+    "fine": 0,
+    "prison": 20,
+    "labor": 0,
+    "sentence": 20,
+    "note": "以任何武力等級之武器，強迫市民交出其財產"
+  },
+  {
+    "id": "5-005",
+    "code": "5-005",
+    "category": "搶劫、嚴重危害公共安全或走私相關",
+    "type": "重罪",
+    "name": "搶劫商店",
+    "fine": 0,
+    "prison": 20,
+    "labor": 0,
+    "sentence": 20,
+    "note": "搶劫城市裡的任何商店以獲得不法之財"
+  },
+  {
+    "id": "5-006",
+    "code": "5-006",
+    "category": "搶劫、嚴重危害公共安全或走私相關",
+    "type": "重罪",
+    "name": "搶劫醫療物資",
+    "fine": 0,
+    "prison": 20,
+    "labor": 0,
+    "sentence": 20,
+    "note": "搶劫軍隊的醫療物資"
+  },
+  {
+    "id": "5-007",
+    "code": "5-007",
+    "category": "搶劫、嚴重危害公共安全或走私相關",
+    "type": "重罪",
+    "name": "搶劫珠寶",
+    "fine": 0,
+    "prison": 20,
+    "labor": 0,
+    "sentence": 20,
+    "note": "搶劫珠寶店以獲得不法之財"
+  },
+  {
+    "id": "5-008",
+    "code": "5-008",
+    "category": "搶劫、嚴重危害公共安全或走私相關",
+    "type": "重罪",
+    "name": "搶劫小銀行",
+    "fine": 0,
+    "prison": 20,
+    "labor": 0,
+    "sentence": 20,
+    "note": "搶劫小銀行以獲得不法之財"
+  },
+  {
+    "id": "5-009",
+    "code": "5-009",
+    "category": "搶劫、嚴重危害公共安全或走私相關",
+    "type": "重罪",
+    "name": "搶劫太平洋銀行",
+    "fine": 0,
+    "prison": 20,
+    "labor": 0,
+    "sentence": 20,
+    "note": "搶劫太平洋銀行以獲得不法之財"
+  },
+  {
+    "id": "5-010",
+    "code": "5-010",
+    "category": "搶劫、嚴重危害公共安全或走私相關",
+    "type": "重罪",
+    "name": "搶劫同謀",
+    "fine": 0,
+    "prison": 20,
+    "labor": 0,
+    "sentence": 20,
+    "note": "搶劫建物案之同謀（協助者）"
+  },
+  {
+    "id": "5-011",
+    "code": "5-011",
+    "category": "搶劫、嚴重危害公共安全或走私相關",
+    "type": "重罪",
+    "name": "挾持交通工具",
+    "fine": 8000,
+    "prison": 20,
+    "labor": 0,
+    "sentence": 20,
+    "note": "以武力或脅迫手段控制或劫持任何交通工具（如巴士、計程車、船隻、飛機等），威脅駕駛人或乘客安全"
+  },
+  {
+    "id": "5-012",
+    "code": "5-012",
+    "category": "搶劫、嚴重危害公共安全或走私相關",
+    "type": "重罪",
+    "name": "非法武裝集會",
+    "fine": 5000,
+    "prison": 20,
+    "labor": 0,
+    "sentence": 20,
+    "note": "三人以上於公共場合攜帶武器聚集，造成市民恐慌或威脅公共安全"
+  },
+  {
+    "id": "5-013",
+    "code": "5-013",
+    "category": "搶劫、嚴重危害公共安全或走私相關",
+    "type": "輕罪",
+    "name": "非法收購贓物",
+    "fine": 3000,
+    "prison": 0,
+    "labor": 15,
+    "sentence": 15,
+    "note": "明知為非法來源財物，仍進行購買或交換"
+  },
+  {
+    "id": "5-014",
+    "code": "5-014",
+    "category": "搶劫、嚴重危害公共安全或走私相關",
+    "type": "重罪",
+    "name": "非法運送違禁品",
+    "fine": 8000,
+    "prison": 20,
+    "labor": 0,
+    "sentence": 20,
+    "note": "替他人運送毒品、黑錢、槍械或其他違禁品，雖未直接販售，仍屬犯罪行為"
+  },
+  {
+    "id": "5-015",
+    "code": "5-015",
+    "category": "搶劫、嚴重危害公共安全或走私相關",
+    "type": "重罪",
+    "name": "假冒公職人員",
+    "fine": 8000,
+    "prison": 20,
+    "labor": 0,
+    "sentence": 20,
+    "note": "冒充依法任命之公務員或執法人員身分，足以使他人誤信並行使其職權之行為"
+  },
+  {
+    "id": "5-016",
+    "code": "5-016",
+    "category": "搶劫、嚴重危害公共安全或走私相關",
+    "type": "重罪",
+    "name": "未經許可穿著公職人員制服",
+    "fine": 5000,
+    "prison": 20,
+    "labor": 0,
+    "sentence": 20,
+    "note": "未經合法授權而穿著、配戴公職人員之制服、徽章、識別證或相關標誌，足以使他人誤認其具該職務身分之行為"
+  },
+  {
+    "id": "4-001",
+    "code": "4-001",
+    "category": "動物相關",
+    "type": "輕罪",
+    "name": "虐待動物",
+    "fine": 2000,
+    "prison": 0,
+    "labor": 10,
+    "sentence": 10,
+    "note": "人類對非人類動物蓄意或非蓄意施行使該動物承受痛苦或傷害的行為"
+  },
+  {
+    "id": "4-002",
+    "code": "4-002",
+    "category": "動物相關",
+    "type": "重罪",
+    "name": "虐待動物致其昏迷",
+    "fine": 5000,
+    "prison": 20,
+    "labor": 0,
+    "sentence": 20,
+    "note": "人類對非人類動物蓄意或非蓄意施行使該動物死亡"
+  },
+  {
+    "id": "4-003",
+    "code": "4-003",
+    "category": "動物相關",
+    "type": "重罪",
+    "name": "持有保育類相關產物",
+    "fine": 3000,
+    "prison": 20,
+    "labor": 0,
+    "sentence": 20,
+    "note": "持有保育類動物相關產物，包括但不限於：食品、皮、肉、服飾、包包"
+  },
+  {
+    "id": "4-004",
+    "code": "4-004",
+    "category": "動物相關",
+    "type": "重罪",
+    "name": "運送保育類動物",
+    "fine": 5000,
+    "prison": 20,
+    "labor": 0,
+    "sentence": 20,
+    "note": "持有保育類動物本體"
+  },
+  {
+    "id": "4-005",
+    "code": "4-005",
+    "category": "動物相關",
+    "type": "重罪",
+    "name": "販賣保育類相關產物或本體",
+    "fine": 8000,
+    "prison": 20,
+    "labor": 0,
+    "sentence": 20,
+    "note": "販賣保育類動物相關產物或本體"
+  }
+];
     let rules = loadRules();
     let selected = [];
     const COMMON_LAW_CODES = ['1-008', '1-009', '2-004', '2-026', '2-012', '3-006', '3-007', '3-008', '3-009', '3-011', '3-012', '3-016', '3-017', '5-001', '5-004', '5-005', '5-007'];
@@ -1456,6 +1490,15 @@
     function saveLawPackages() { localStorage.setItem(PACKAGE_STORAGE_KEY, JSON.stringify(lawPackages)); }
     function money(n) { return '$' + Number(n || 0).toLocaleString('en-US'); }
     function num(id) { return Number(document.getElementById(id).value || 0); }
+    function penaltyLabel(rule) {
+      return rule.penaltyOptions?.find(p => p.fine === rule.fine && p.prison === rule.prison && p.labor === rule.labor)?.label || '';
+    }
+    function penaltyChoices(rule, index = null) {
+      if (!rule.penaltyOptions?.length) return '';
+      const attr = index === null ? `data-selected-penalty="${rule.id}"` : `data-rule-penalty="${index}"`;
+      const current = rule.penaltyOptions.findIndex(p => p.fine === rule.fine && p.prison === rule.prison && p.labor === rule.labor);
+      return `<label class="penalty-select">傷害類型<select ${attr} aria-label="${rule.code} 傷害類型">${current < 0 ? '<option value="" selected disabled>自訂數值</option>' : ''}${rule.penaltyOptions.map((p, i) => `<option value="${i}" ${current === i ? 'selected' : ''}>${p.label}：${money(p.fine)}／公共服務 ${p.labor} 次</option>`).join('')}</select></label>`;
+    }
     function typeClass(type) {
       if (type === '重罪') return 'felony';
       if (type === '輕罪') return 'misdemeanor';
@@ -1474,7 +1517,7 @@
       const note = document.getElementById('ticketLimitNote');
       if (!note) return;
       const limit = ticketLimit();
-      note.innerHTML = `${isSpecialListed() ? '特殊名單' : '一般犯人'}目前最多可開 <strong>${limit}</strong> 張罰單；已選 <strong>${selected.length}</strong> 張。`;
+      note.innerHTML = `${isSpecialListed() ? '特殊名單' : '一般犯人'}目前最多 <strong>${limit}</strong> 項罪名；已選 <strong>${selected.length}</strong> 項。應優先採用最直接、情節最重大的罪名。`;
     }
     function toast(msg) {
       const el = document.getElementById('toast');
@@ -1501,6 +1544,7 @@
               <div>
                 <strong>${item.code || ''} ${item.name}</strong>
                 <small>${typeBadge(item.type)}<span class="metric">${money(item.fine)}</span><span class="metric">${item.prison ? item.prison + ' 月' : '-'}</span><span class="metric">${item.labor ? item.labor + ' 次' : '-'}</span></small>
+                ${item.penaltyOptions ? `<div class="hint">${item.penaltyOptions.map(p => `${p.label} ${money(p.fine)}／${p.labor} 次`).join('；')}（加入後可選）</div>` : ''}
                 ${item.note ? `<div class="note-line">${item.note}</div>` : ''}
               </div>
               <button data-add="${item.id}" ${selected.some(s => s.id === item.id) || selected.length >= limit ? 'disabled' : ''}>加入</button>
@@ -1530,20 +1574,12 @@
         return a;
       }, { fine: num('extraFine'), prison: 0, labor: 0 });
       const hasFelony = selected.some(r => r.type === '重罪');
-      const hasMisdemeanor = selected.some(r => r.type === '輕罪');
-      const mergedLaborIntoPrison = hasFelony && hasMisdemeanor && raw.labor > 0;
-      const sentenceBase = {
-        fine: raw.fine,
-        prison: mergedLaborIntoPrison ? raw.prison + raw.labor : raw.prison,
-        labor: mergedLaborIntoPrison ? 0 : raw.labor
-      };
-      const multiplier = Math.max(0, 100 - Math.min(100, num('discount'))) / 100;
       return {
         raw,
-        mergedLaborIntoPrison,
-        fine: Math.round(sentenceBase.fine * multiplier),
-        prison: Math.round(sentenceBase.prison * multiplier),
-        labor: Math.round(sentenceBase.labor * multiplier)
+        laborWaived: hasFelony && raw.labor > 0,
+        fine: raw.fine,
+        prison: raw.prison,
+        labor: hasFelony ? 0 : raw.labor
       };
     }
     function renderSelected() {
@@ -1559,10 +1595,19 @@
             <strong>${i + 1}. ${r.code || ''} ${r.name}</strong>
             <div class="hint">${typeBadge(r.type)} ${money(r.fine)} / ${r.prison ? r.prison + ' 月' : '-'} / ${r.labor ? r.labor + ' 次' : '-'}</div>
             ${r.note ? `<div class="note-line">${r.note}</div>` : ''}
+            ${penaltyChoices(r)}
           </div>
           <button class="danger" data-remove="${r.id}">移除</button>
-        </div>`).join('') + (totals.mergedLaborIntoPrison ? '<div class="hint" style="margin-top:10px;color:#ff9d2e">已套用重罪併輕罪規則：公共服務次數併入監禁總刑期。</div>' : '') : '尚未輸入任何罪名';
+        </div>`).join('') + (totals.laborWaived ? '<div class="hint" style="margin-top:10px;color:#ff9d2e">已套用重罪規則：僅執行監禁，不另執行公共服務；各罪罰款仍累加。</div>' : '') : '尚未輸入任何罪名';
       document.querySelectorAll('[data-remove]').forEach(btn => btn.addEventListener('click', () => removeRule(btn.dataset.remove)));
+      document.querySelectorAll('[data-selected-penalty]').forEach(input => input.addEventListener('change', () => {
+        const rule = selected.find(r => r.id === input.dataset.selectedPenalty);
+        const penalty = rule?.penaltyOptions?.[Number(input.value)];
+        if (!penalty) return;
+        const { label, ...values } = penalty;
+        Object.assign(rule, values);
+        renderSelected();
+      }));
       return totals;
     }
     function renderPackageToggle() {
@@ -1598,7 +1643,7 @@
       const toAdd = laws.filter(rule => !selected.some(s => s.id === rule.id));
       if (!toAdd.length) return toast('此套裝法條已在判決內');
       const limit = ticketLimit();
-      if (selected.length + toAdd.length > limit) return toast(`套裝會超過 ${limit} 張罰單上限，請先清空或勾選特殊名單`);
+      if (selected.length + toAdd.length > limit) return toast(`套裝會超過 ${limit} 項罪名上限，請先清空或勾選特殊名單`);
       selected.push(...toAdd.map(rule => ({ ...rule })));
       toast(`已套用：${pack.name}`);
       renderAll();
@@ -1661,24 +1706,24 @@
     }
     function verdictText() {
       const totals = renderSelected();
-      const lines = selected.map((r, i) => `${i + 1}. ${r.code || ''} ${r.name} [${r.type}] (${money(r.fine)} / ${r.prison}月 / ${r.labor}次)${r.note ? `\n   備註：${r.note}` : ''}`);
+      const lines = selected.map((r, i) => `${i + 1}. ${r.code || ''} ${r.name}${penaltyLabel(r) ? `（${penaltyLabel(r)}）` : ''} [${r.type}] (${money(r.fine)} / ${r.prison}月 / ${r.labor}次)${r.note ? `\n   備註：${r.note}` : ''}`);
       if (num('extraFine') > 0) lines.push(`手動加罰金：${money(num('extraFine'))}`);
-      const mergeNote = totals.mergedLaborIntoPrison ? '\n計算規則：同時有輕罪與重罪，公共服務次數已併入監禁總刑期。' : '';
-      return `【判決摘要】\n特殊名單：${isSpecialListed() ? '是' : '否'}（罰單上限 ${ticketLimit()} 張）\n${lines.join('\n') || '尚未選擇罪名'}\n\n總罰金：${money(totals.fine)}\n總刑期：${totals.prison} 月\n公共服務：${totals.labor} 次${mergeNote}${num('discount') ? `\n折扣/減刑：${num('discount')}%` : ''}`;
+      const mergeNote = totals.laborWaived ? '\n計算規則：有重罪時僅執行監禁，不另執行公共服務；各罪罰款仍累加。' : '';
+      return `【判決摘要】\n特殊名單：${isSpecialListed() ? '是' : '否'}（罪名上限 ${ticketLimit()} 項）\n${lines.join('\n') || '尚未選擇罪名'}\n\n總罰金：${money(totals.fine)}\n總刑期：${totals.prison} 月\n公共服務：${totals.labor} 次${mergeNote}`;
     }
     function renderTable() {
       document.getElementById('rulesTable').innerHTML = rules.map((r, i) => `
         <tr>
           <td>${r.code || r.id}</td>
           <td><span class="pill">${r.category}</span></td>
-          <td>${r.name}</td>
+          <td>${r.name}${penaltyChoices(r, i)}</td>
           <td><div style="margin-bottom:6px">${typeBadge(r.type)}</div><select data-field="type" data-i="${i}"><option value="違規" ${r.type === '違規' ? 'selected' : ''}>違規</option><option value="輕罪" ${r.type === '輕罪' ? 'selected' : ''}>輕罪</option><option value="重罪" ${r.type === '重罪' ? 'selected' : ''}>重罪</option></select></td>
           <td><input type="number" min="0" data-field="fine" data-i="${i}" value="${r.fine}"></td>
           <td><input type="number" min="0" data-field="prison" data-i="${i}" value="${r.prison}"></td>
           <td><input type="number" min="0" data-field="labor" data-i="${i}" value="${r.labor}"></td>
           <td><textarea data-field="note" data-i="${i}" style="min-height:64px">${r.note || ''}</textarea></td>
         </tr>`).join('');
-      document.querySelectorAll('#rulesTable input, #rulesTable select, #rulesTable textarea').forEach(input => {
+      document.querySelectorAll('#rulesTable [data-field]').forEach(input => {
         input.addEventListener('change', () => {
           const i = Number(input.dataset.i);
           const field = input.dataset.field;
@@ -1694,6 +1739,16 @@
           renderAll();
         });
       });
+      document.querySelectorAll('[data-rule-penalty]').forEach(input => input.addEventListener('change', () => {
+        const rule = rules[Number(input.dataset.rulePenalty)];
+        const penalty = rule?.penaltyOptions?.[Number(input.value)];
+        if (!penalty) return;
+        const { label, ...values } = penalty;
+        Object.assign(rule, values);
+        selected = selected.map(s => s.id === rule.id ? { ...rule } : s);
+        saveRules();
+        renderAll();
+      }));
     }
     function generateReport() {
       const now = new Date();
@@ -1850,11 +1905,10 @@
       const limit = ticketLimit();
       if (selected.length > limit) {
         selected = selected.slice(0, limit);
-        toast(`已切回一般限制，保留前 ${limit} 張罰單`);
+        toast(`已切回一般限制，保留前 ${limit} 項罪名`);
       }
       renderAll();
     });
-    document.getElementById('discount').addEventListener('input', renderSelected);
     document.getElementById('extraFine').addEventListener('input', renderSelected);
     document.getElementById('clearSelected').addEventListener('click', () => { selected = []; document.getElementById('extraFine').value = 0; renderAll(); });
     document.getElementById('copyVerdict').addEventListener('click', () => copyText(verdictText()));
